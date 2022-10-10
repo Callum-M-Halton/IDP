@@ -1,0 +1,137 @@
+
+
+// CONSTANTS
+const speeds = {
+	tiny: _____
+	low: ____
+	med: _____
+	high: _____
+}
+const modes = enum {
+	start,
+	approaching_symmetric_junct,
+	making_right_turn,
+	basic,
+	,
+	
+	approaching_right_turn
+	approaching_block_on_line,
+
+
+}
+
+
+const SAMPLE_LENGTH = _________
+const CURVING_LEFT_THRESHOLD = ________
+
+// directions
+dirs = enum {left, right, straight}
+// extents
+exts = enum {little, mid, far}
+
+// Hardware Commands
+void set_right(speed)
+void set_left(speed)
+[int, int, int] get_sensors()
+int get_juct_sensor()
+
+// Not Hardware
+void set_motor_speed(is_right, speed):
+	if is_right:
+		if motor_speeds[1] != speed:
+			set_right(speed)
+			motor_speeds[1] == speed
+	else:
+		// ...
+
+
+
+
+
+// initial robot state dict
+state = {
+	motor_speeds: [0, 0],
+	dir: [straight, null],
+	grabber_down: False,
+	sector: 0,
+	// dead-reckoned and waymarked
+	pos: start_pos,
+	// ONLY EVER CURVING LEFT
+	curving_left: False,
+	avg_turns_disparity: 0,
+	// List of recent motor_speeds arrays of length SAMPLE_LENGTH
+	motor_speeds_sample: [[],[]],
+	state.mode = ______
+}
+
+//  For < line width spaced sensors
+void correct_trajectory():
+	sensor_vals = get_sensors()
+	switch sensor_vals:
+		case [0, 1, 1]:
+			state.dir = [dirs.left, exts.little]
+			set_motor_speed(True, speeds.med)
+		case [1, 1, 0]:
+			state.dir = [dirs.right, exts.little]
+			set_motor_speed(False, speeds.med)
+		case [0, 0, 1]:
+			state.dir = [dirs.left, exts.mid]
+			set_motor_speed(True, speeds.low)
+		case [1, 0, 0]:
+			state.dir = [dirs.right, exts.mid]
+			set_motor_speed(False, speeds.low)
+		case [0, 0, 0]:
+			if state.dir = [dirs.left, exts.mid]:
+				state.dir = [dirs.left, exts.far]
+				set_motor_speed(True, speeds.tiny)
+			else:
+				state.dir = [dirs.right, exts.far]
+				set_motor_speed(False, speeds.tiny)
+
+
+void update_curving_left():
+	motor_speeds_sample[i].append(motor_speeds)
+	if motor_speeds_sample.length() == SAMPLE_LENGTH:
+		tot = 0
+		for past_motor_speeds in motor_speeds_sample:
+			tot += past_motor_speeds[1] - past_motor_speeds[0]
+		state.avg_turns_disparity = tot / SAMPLE_LENGTH
+
+	if motor_speeds_sample.length() > SAMPLE_LENGTH:
+		rem = motor_speeds_sample[0]
+		state.avg_turns_disparity -= ((rem[1] - rem[0]) / SAMPLE_LENGTH)
+		motor_speeds_sample.remove_index(0)
+
+		state.avg_turns_disparity += ((motor_speeds[1] - motor_speeds[0]) / SAMPLE_LENGTH)
+		motor_speeds_sample.append(motor_speeds)
+
+	// UNSAFE CODE
+	if state.avg_turns_disparity > CURVING_LEFT_THRESHOLD:
+		if state.curving_left == False:
+			state.curving_left = True
+			state.sector++
+	else:
+		if state.curving_left == True:
+			state.curving_left = False
+			state.sector++
+
+
+void loop():
+	// Line Following
+	correct_trajectory()
+	// FIGURE OUT IF WE'RE CURVING LEFT
+	update_curving_left()
+	if (state.expecting_junct and get_juct_sensor()):
+		if state.
+
+
+
+
+
+
+
+
+
+
+
+
