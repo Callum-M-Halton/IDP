@@ -11,13 +11,16 @@ const modes = enum {
 	start,
 	approaching_symmetric_junct,
 	making_right_turn,
-	basic,
-	,
-	
-	approaching_right_turn
+	basic, // (basic line following)
 	approaching_block_on_line,
-
-
+	testing_block,
+	lowering_grabber,
+	approaching_tunnel,
+	in_tunnel,
+	approaching_right_turn_to_take,
+	approaching_box,
+	raising_grabber,
+	doing_a_180,
 }
 
 
@@ -61,11 +64,11 @@ state = {
 	avg_turns_disparity: 0,
 	// List of recent motor_speeds arrays of length SAMPLE_LENGTH
 	motor_speeds_sample: [[],[]],
-	state.mode = ______
+	state.mode = modes.start
 }
 
 //  For < line width spaced sensors
-void correct_trajectory():
+Bool correct_trajectory():
 	sensor_vals = get_sensors()
 	switch sensor_vals:
 		case [0, 1, 1]:
@@ -87,6 +90,8 @@ void correct_trajectory():
 			else:
 				state.dir = [dirs.right, exts.far]
 				set_motor_speed(False, speeds.tiny)
+			return True
+	return False
 
 
 void update_curving_left():
@@ -118,11 +123,17 @@ void update_curving_left():
 
 void loop():
 	// Line Following
-	correct_trajectory()
-	// FIGURE OUT IF WE'RE CURVING LEFT
-	update_curving_left()
-	if (state.expecting_junct and get_juct_sensor()):
-		if state.
+	// REPLACE WITH FOLLOW LINE VAL IN STATE AND HAVE MODE SETTER FUNCTION WHICH CONFIGURES IT
+	if state.mode not in [
+			modes.making_right_turn, modes.testing_block, modes.lowering_grabber, modes.in_tunnel, modes.raising_grabber, modes.doing_a_180]:
+		lost_line = correct_trajectory()
+		// FIGURE OUT IF WE'RE CURVING LEFT
+		update_curving_left()
+
+
+	if state.mode == modes.approaching_symmetric_junct:
+		if 
+	if state.mode == making_right_turn:
 
 
 
