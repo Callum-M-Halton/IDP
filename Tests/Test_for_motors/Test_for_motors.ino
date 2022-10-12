@@ -1,47 +1,47 @@
-//install AFMOTOR library 
-//go to sketch, include library, add .ZIP library, select afmotor zip file
+/*
+This is a test sketch for the Adafruit assembled Motor Shield for Arduino v2
+It won't work with v1.x motor shields! Only for the v2's with built in PWM
+control
+For use with the Adafruit Motor Shield v2
+---->  http://www.adafruit.com/products/1438
+*/
 
-//including the libraries
-#include <AFMotor.h>
+#include <Adafruit_MotorShield.h>
 
-//defining pins and variables
-#define left A0
-#define right A1
+// Create the motor shield object with the default I2C address
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 
-//defining motors
-AF_DCMotor motor1(1, MOTOR12_1KHZ); 
-AF_DCMotor motor2(2, MOTOR12_1KHZ);
-AF_DCMotor motor3(3, MOTOR34_1KHZ);
-AF_DCMotor motor4(4, MOTOR34_1KHZ);
-
-
+// Select which 'port' M1, M2, M3 or M4. In this case, M1
+Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
+Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
+// You can also make another motor on port M2
+//Adafruit_DCMotor *myOtherMotor = AFMS.getMotor(2);
 
 void setup() {
-  //declaring pin types
-  pinMode(left,INPUT);
-  pinMode(right,INPUT);
-  //begin serial communication
-  Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
   
+  Serial.begin(9600);           // set up Serial library at 9600 bps
+  Serial.println("Adafruit Motorshield v2 - DC Motor test!");
+
+  if (!AFMS.begin(/*default frequency 1.6KHz*/)) {
+    Serial.println("Could not find Motor Shield. Check wiring.");
+    while (1);
+  }
+  Serial.println("Motor Shield found.");
+
+  // Set the speed to start, from 0 (off) to 255 (max speed)
+  motor1->setSpeed(255);
+  motor1->run(FORWARD);
+  // turn on motor
+  motor1->run(RELEASE);
+
+  // Set the speed to start, from 0 (off) to 255 (max speed)
+  motor2->setSpeed(255);
+  motor2->run(FORWARD);
+  // turn on motor
+  motor2->run(RELEASE);
 }
 
-void loop(){
-    motor1.run(FORWARD);
-    motor1.setSpeed(200);
-    motor2.run(FORWARD);
-    motor2.setSpeed(200);
-    motor3.run(FORWARD);
-    motor3.setSpeed(200);
-    motor4.run(FORWARD);
-    motor4.setSpeed(200);
-
-
-    //motor1.run(BACKWARD);
-    //motor1.setSpeed(200);
-    //motor2.run(BACKWARD);
-    //motor2.setSpeed(200);
-    //motor3.run(BACKWARD);
-    //motor3.setSpeed(200);
-    //motor4.run(BACKWARD);
-    //motor4.setSpeed(200);
+void loop() {
+ 
 }
