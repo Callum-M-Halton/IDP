@@ -21,16 +21,22 @@ const modes = enum {
 	approaching_box,
 	raising_grabber,
 	doing_a_180,
+	lost_line,
 }
 
+const line_end_likelihood = enum {
+	low,
+	med,
+	high
+}
 
 const SAMPLE_LENGTH = _________
 const CURVING_LEFT_THRESHOLD = ________
 
 // directions
-dirs = enum {left, right, straight}
+offset_dirs = enum {none, left, right, unknown}
 // extents
-exts = enum {little, mid, far}
+offset_exts = enum {none, little, mid, far}
 
 // Hardware Commands
 void set_right(speed)
@@ -65,32 +71,50 @@ state = {
 	// List of recent motor_speeds arrays of length SAMPLE_LENGTH
 	motor_speeds_sample: [[],[]],
 	state.mode = modes.start
+	state.prev_mode = modes.start
 }
 
 //  For < line width spaced sensors
-Bool correct_trajectory():
+enum correct_trajectory():
 	sensor_vals = get_sensors()
 	switch sensor_vals:
+		case [0, 1, 0]:
+			state.line_offset = [offset_dirs.none, offset_exts.none]
+			set_motor_speed(True, speeds.med)
 		case [0, 1, 1]:
-			state.dir = [dirs.left, exts.little]
+			state.line_offset = [offset_dirs.left, offset_exts.little]
 			set_motor_speed(True, speeds.med)
 		case [1, 1, 0]:
-			state.dir = [dirs.right, exts.little]
+			state.line_offset = [offset_dirs.right, offset_exts.little]
 			set_motor_speed(False, speeds.med)
 		case [0, 0, 1]:
-			state.dir = [dirs.left, exts.mid]
+			state.line_offset = [offset_dirs.left, offset_exts.mid]
 			set_motor_speed(True, speeds.low)
 		case [1, 0, 0]:
-			state.dir = [dirs.right, exts.mid]
+			state.line_offset = [offset_dirs.right, offset_exts.mid]
 			set_motor_speed(False, speeds.low)
 		case [0, 0, 0]:
-			if state.dir = [dirs.left, exts.mid]:
-				state.dir = [dirs.left, exts.far]
+			// Figure out how to drive motors
+			state.line_offset[1] = offset_exts.far
+			if state.line_offset[0] = offset_dirs.left:
 				set_motor_speed(True, speeds.tiny)
-			else:
-				state.dir = [dirs.right, exts.far]
+			elif state.line_offset[0] = offset_dirs.right:
 				set_motor_speed(False, speeds.tiny)
-			return True
+			else:
+				state.line_offset[0] = unknown:
+				state.prev_mode = state.mode
+				state.mode = modes.lost_line
+
+			// Figure out likelihood that end of line reached
+			switch state.line_offset:
+				case [offset_dirs.left, offset_exts.mid]
+			if state.line_offset = [offset_dirs.left, offset_exts.mid]:
+
+				return line_end_likelihood.low
+			else:
+				state.line_offset = [offset_dirs.right, offset_exts.far]
+				
+				return line_end_likelihood.low
 	return False
 
 
