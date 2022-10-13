@@ -43,14 +43,14 @@ void set_R_motor_speed(speed) {
 
 
 void correct_trajectory() {
-  int[3] sensors = {analogRead(front_sensor_pins.left),
-    analogRead(front_sensor_pins.mid), analogRead(front_sensor_pins.right)};
+  int[3] sensors = {digitalRead(front_sensor_pins.left),
+    digitalRead(front_sensor_pins.mid), digitalRead(front_sensor_pins.right)};
 
   if (sensors[0]) {
     if (sensors[1]) {
       if (sensors[2]) {
         // case [1, 1, 1]
-        //ERROR
+        digitalWrite(LEDpin_error, 1);
       } else {
         // case [1, 1, 0]
         state.offset_dir = offset_dirs.right;
@@ -60,10 +60,10 @@ void correct_trajectory() {
     } else {
       if (sensors[2]) {
         // case [1, 0, 1]
-        // ERROR
+        digitalWrite(LEDpin_error, 1);
       } else {
         // case [1, 0, 0]
-			  state.offset_dir = offset_dirs.right;
+        state.offset_dir = offset_dirs.right;
         state.offset_ext = offset_exts.mid;
 			  set_L_motor_speed(speeds.low);
       }
@@ -96,13 +96,27 @@ void correct_trajectory() {
 					set_L_motor_speed(speeds.tiny)
         } else {
           // ERROR
-        }
+      }
     }
   }
 }
 
 void setup() {
   Serial.begin(9600);
+
+  //setting the IR sensor pins as inputs
+  pinMode(IR_sensor_pin_1, INPUT);
+  pinMode(IR_sensor_pin_2, INPUT);
+  pinMode(IR_sensor_pin_3, INPUT);
+  
+  //setting LEDs for Errors, movement
+  pinMode(LEDpin_error, OUTPUT);
+  pinMode(LEDpin_1, OUTPUT);
+  pinMode(LEDpin_2, OUTPUT);
+  pinMode(LEDpin_3, OUTPUT);
+  //pinMode(LEDpin_mag, OUTPUT);
+  //pinMode(LEDpin_nonmag, OUTPUT);
+
 }
 
 void loop() {
