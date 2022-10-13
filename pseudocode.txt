@@ -24,10 +24,8 @@ const modes = enum {
 	lost_line,
 }
 
-const line_end_likelihood = enum {
-	low,
-	med,
-	high
+const line_end_likelihoods = enum {
+	none, low, med, high, as_before
 }
 
 const SAMPLE_LENGTH = _________
@@ -69,14 +67,17 @@ state = {
 	curving_left: False,
 	avg_turns_disparity: 0,
 	// List of recent motor_speeds arrays of length SAMPLE_LENGTH
-	motor_speeds_sample: [[],[]],
+	disparities_sample: [[],[]],
 	state.mode = modes.start
 	state.prev_mode = modes.start
+	state.count_down = -1
 }
 
 //  For < line width spaced sensors
 enum correct_trajectory():
+// get_sensors returns an array of the line following sensor's values from left to right
 	sensor_vals = get_sensors()
+	line_end_likelihood = line_end_likelihoods.none
 	switch sensor_vals:
 		case [0, 1, 0]:
 			state.line_offset = [offset_dirs.none, offset_exts.none]
@@ -94,70 +95,88 @@ enum correct_trajectory():
 			state.line_offset = [offset_dirs.right, offset_exts.mid]
 			set_motor_speed(False, speeds.low)
 		case [0, 0, 0]:
-			// Figure out how to drive motors
-			state.line_offset[1] = offset_exts.far
-			if state.line_offset[0] = offset_dirs.left:
-				set_motor_speed(True, speeds.tiny)
-			elif state.line_offset[0] = offset_dirs.right:
-				set_motor_speed(False, speeds.tiny)
-			else:
-				state.line_offset[0] = unknown:
-				state.prev_mode = state.mode
-				state.mode = modes.lost_line
+			// Only do anything if not off the line in the last correction
+			if state.line_offset[1] != offset_exts.far:
 
-			// Figure out likelihood that end of line reached
-			switch state.line_offset:
-				case [offset_dirs.left, offset_exts.mid]
-			if state.line_offset = [offset_dirs.left, offset_exts.mid]:
-
-				return line_end_likelihood.low
+				// Figure out how to drive motors
+				if state.line_offset[0] = offset_dirs.left:
+					set_motor_speed(True, speeds.tiny)
+				elif state.line_offset[0] = offset_dirs.right:
+					set_motor_speed(False, speeds.tiny)
+					
+				// Figure out likelihood that end of line reached
+				switch state.line_offset[1]:
+					case offset_exts.none:
+						line_end_likelihood = line_end_likelihoods.high
+					case offset_exts.little:
+						line_end_likelihood = line_end_likelihoods.med
+					case offset_exts.mid:
+						line_end_likelihood = line_end_likelihoods.low
+				state.line_offset[1] = offset_exts.far
 			else:
-				state.line_offset = [offset_dirs.right, offset_exts.far]
-				
-				return line_end_likelihood.low
-	return False
+				line_end_likelihood = line_end_likelihoods.as_before
+	return line_end_likelihood;
+
 
 
 void update_curving_left():
-	motor_speeds_sample[i].append(motor_speeds)
-	if motor_speeds_sample.length() == SAMPLE_LENGTH:
-		tot = 0
-		for past_motor_speeds in motor_speeds_sample:
-			tot += past_motor_speeds[1] - past_motor_speeds[0]
-		state.avg_turns_disparity = tot / SAMPLE_LENGTH
+	state.disparities_sample.append(state.motor_speeds[1] - state.motor_speeds[0])
+	// Only possible when SAMPLE_LENGTH first reached so avg must be computed from scratch
+	if state.disparities_sample.length() == SAMPLE_LENGTH:
+		state.avg_turns_disparity = sum(state.disparities_sample) / SAMPLE_LENGTH
 
-	if motor_speeds_sample.length() > SAMPLE_LENGTH:
-		rem = motor_speeds_sample[0]
-		state.avg_turns_disparity -= ((rem[1] - rem[0]) / SAMPLE_LENGTH)
-		motor_speeds_sample.remove_index(0)
+	if state.disparities_sample.length() > SAMPLE_LENGTH:
+		oldest_disparity = state.disparities_sample[0]
+		// Remove contribution of oldest turns_disparity from avg
+		state.avg_turns_disparity -= (oldest_disparity / SAMPLE_LENGTH)
+		// Remove oldest turns disparity
+		state.disparities_sample.pop(0)
+		// Add contribution of newest disparity
+		state.avg_turns_disparity += state.disparities_sample.last / SAMPLE_LENGTH
 
-		state.avg_turns_disparity += ((motor_speeds[1] - motor_speeds[0]) / SAMPLE_LENGTH)
-		motor_speeds_sample.append(motor_speeds)
-
-	// UNSAFE CODE
+	// If turns_disparity high enough, right wheel overdriven enough to be curving right
 	if state.avg_turns_disparity > CURVING_LEFT_THRESHOLD:
 		if state.curving_left == False:
+			// From straight to curving
 			state.curving_left = True
 			state.sector++
 	else:
 		if state.curving_left == True:
+			// From curving to straight
 			state.curving_left = False
 			state.sector++
 
 
 void loop():
-	// Line Following
-	// REPLACE WITH FOLLOW LINE VAL IN STATE AND HAVE MODE SETTER FUNCTION WHICH CONFIGURES IT
-	if state.mode not in [
-			modes.making_right_turn, modes.testing_block, modes.lowering_grabber, modes.in_tunnel, modes.raising_grabber, modes.doing_a_180]:
-		lost_line = correct_trajectory()
-		// FIGURE OUT IF WE'RE CURVING LEFT
-		update_curving_left()
-
-
-	if state.mode == modes.approaching_symmetric_junct:
-		if 
-	if state.mode == making_right_turn:
+	// Line Follow if in a line_following mode
+	if state.mode in [approaching_symmetric_junct, basic, approaching_block_on_line, approaching_tunnel, 
+			approaching_right_turn_to_take, approaching_box]:
+		line_end_likelihood = correct_trajectory()
+		if line_end_likelihood = line_end_likelihood.none:
+			// a value of -1 indicates no countdown as we're still on the line
+			state.count_down = -1
+		// if as_before, a count_down will already have been set so...
+		elif line_end_likelihood == line_end_likelihoods.as_before:
+			// decrement it towards 0 (where it runs out)
+			state.count_down -= 1
+			// if the timer has run out assume end of line reached and take appropriate action
+			if state.count_down = 0:
+				if state.mode in [approaching_box, approaching_symmetric_junct, approaching_tunnel]:
+					// update sector
+				// Otherwise we're not expecting an end of line so we've actually LOST THE LINE!!!
+				else:
+					// we have lost the line
+					state.prev_mode = state.mode
+					state.mode = modes.lost_line
+		// We have just moved off of the line and need to set a timer to wait to determine if end of line reached
+		else:
+			// The higher the likelihood the lower the count_down set 
+			// e.g. state.count_down = 1 for line_end_likelihoods.high
+			state.count_down = count_downs_by_line_end_likelihood[line_end_likelihood]
+		
+			
+	// FIGURE OUT IF WE'RE CURVING LEFT
+	update_curving_left()
 
 
 
