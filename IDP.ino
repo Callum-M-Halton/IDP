@@ -23,7 +23,7 @@ struct state_struct {
   int motor_speeds[2]; offset_dirs_struct offset_dir;
   offset_exts_struct offset_ext;
 };
-state_struct struct = {
+state_struct state = {
   [0, 0], offset_dirs.none,
   offset_exts.none
 }
@@ -50,29 +50,53 @@ void correct_trajectory() {
     if (sensors[1]) {
       if (sensors[2]) {
         // case [1, 1, 1]
+        //ERROR
       } else {
         // case [1, 1, 0]
+        state.offset_dir = offset_dirs.right;
+        state.offset_ext = offset_exts.little;
+			  set_L_motor_speed(speeds.med);
       }
     } else {
       if (sensors[2]) {
         // case [1, 0, 1]
+        // ERROR
       } else {
         // case [1, 0, 0]
+			  state.offset_dir = offset_dirs.right;
+        state.offset_ext = offset_exts.mid;
+			  set_L_motor_speed(speeds.low);
       }
     }
   } else {
     if (sensors[1]) {
       if (sensors[2]) {
         // case [0, 1, 1]
+        state.offset_dir = offset_dirs.left;
+        state.offset_ext = offset_exts.little;
+			  set_R_motor_speed(speeds.med);
       } else {
         // case [0, 1, 0]
+        state.offset_dir = offset_dirs.none;
+        state.offset_ext = offset_exts.none;
+			  set_L_motor_speed(speeds.high);
+        set_R_motor_speed(speeds.high);
       }
     } else {
       if (sensors[2]) {
         // case [0, 0, 1]
+        state.offset_dir = offset_dirs.left;
+        state.offset_ext = offset_exts.mid;
+			  set_R_motor_speed(speeds.low);
       } else {
         // case [0, 0, 0]
-      }
+        if (state.offset_dir == offset_dirs.left) {
+					set_R_motor_speed(speeds.tiny);
+        } else if (state.offset_dir == offset_dirs.right) {
+					set_L_motor_speed(speeds.tiny)
+        } else {
+          // ERROR
+        }
     }
   }
 }
