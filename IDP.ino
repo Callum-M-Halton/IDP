@@ -8,6 +8,23 @@ int LEDpin_error = 5;
 struct front_sensor_pins_struct {int left; int mid; int right;};
 front_sensor_pins_struct front_sensor_pins  = {2, 3, 4};
 
+struct modes_struct{
+  int start;
+	int approaching_symmetric_junct;
+	int making_right_turn;
+	int basic; // (basic line following)
+	int approaching_block_on_line;
+	int testing_block;
+	int lowering_grabber;
+	int approaching_tunnel;
+	int in_tunnel;
+	int approaching_right_turn_to_take;
+	int approaching_box;
+	int raising_grabber;
+	int doing_a_180;
+	int lost_line;
+  }
+modes_struct modes = {1,2,3,4,5,6,7,8,9,10,11,12,13,14};
 
 struct speeds_struct {int tiny; int low; int med; int high;};
 speeds_struct speeds = {100, 150, 200, 250};
