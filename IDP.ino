@@ -4,14 +4,13 @@
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *L_motor = AFMS.getMotor(1);
 Adafruit_DCMotor *R_motor = AFMS.getMotor(2);
-int sensorPin = A2;   
-int sensorValue = 0;
+int LEDpin_error = 5;
+struct front_sensor_pins_struct {int left; int mid; int right;};
+front_sensor_pins_struct front_sensor_pins  = {2, 3, 4};
+
 
 struct speeds_struct {int tiny; int low; int med; int high;};
 speeds_struct speeds = {100, 150, 200, 250};
-
-struct front_sensor_pins_struct {int left; int mid; int right;};
-front_sensor_pins_struct front_sensor_pins  = {A0, A1, A2};
 
 struct offset_dirs_struct {int none; int left; int right; int unknown;};
 offset_dirs_struct offset_dirs = {0, 1, 2, 3};
@@ -20,36 +19,36 @@ struct offset_exts_struct {int none; int little; int mid; int far;};
 offset_exts_struct offset_exts = {0, 1, 2, 3};
 
 struct state_struct {
-  int motor_speeds[2]; offset_dirs_struct offset_dir;
-  offset_exts_struct offset_ext;
+  int motor_speeds[2]; int offset_dir;
+  int offset_ext;
 };
 state_struct state = {
-  [0, 0], offset_dirs.none,
+  {0, 0}, offset_dirs.none,
   offset_exts.none
+};
+
+void set_L_motor_speed(int speed) {
+	if (state.motor_speeds[0] != speed) {
+    state.motor_speeds[0] = speed;
+    L_motor -> setSpeed(speed);
+	}
 }
-
-void set_L_motor_speed(speed) {
-		if (motor_speeds[0] != speed) {
-      motor_speeds[0] = speed
-      L_motor -> setSpeed(speed)
+void set_R_motor_speed(int speed) {
+	if (state.motor_speeds[1] != speed) {
+    state.motor_speeds[1] = speed;
+    R_motor -> setSpeed(speed);
+	}
 }
-void set_R_motor_speed(speed) {
-		if (motor_speeds[1] != speed) {
-      motor_speeds[1] = speed
-      R_motor -> setSpeed(speed)
-}
-
-
-
 
 void correct_trajectory() {
-  int[3] sensors = {digitalRead(front_sensor_pins.left),
+  int sensors[3] = {digitalRead(front_sensor_pins.left),
     digitalRead(front_sensor_pins.mid), digitalRead(front_sensor_pins.right)};
 
   if (sensors[0]) {
     if (sensors[1]) {
       if (sensors[2]) {
         // case [1, 1, 1]
+        // ERROR
         digitalWrite(LEDpin_error, 1);
       } else {
         // case [1, 1, 0]
@@ -60,6 +59,7 @@ void correct_trajectory() {
     } else {
       if (sensors[2]) {
         // case [1, 0, 1]
+        // ERROR
         digitalWrite(LEDpin_error, 1);
       } else {
         // case [1, 0, 0]
@@ -93,9 +93,11 @@ void correct_trajectory() {
         if (state.offset_dir == offset_dirs.left) {
 					set_R_motor_speed(speeds.tiny);
         } else if (state.offset_dir == offset_dirs.right) {
-					set_L_motor_speed(speeds.tiny)
+					set_L_motor_speed(speeds.tiny);
         } else {
           // ERROR
+          digitalWrite(LEDpin_error, 1);
+        }
       }
     }
   }
@@ -105,24 +107,22 @@ void setup() {
   Serial.begin(9600);
 
   //setting the IR sensor pins as inputs
-  pinMode(IR_sensor_pin_1, INPUT);
-  pinMode(IR_sensor_pin_2, INPUT);
-  pinMode(IR_sensor_pin_3, INPUT);
+  pinMode(front_sensor_pins.left, INPUT);
+  pinMode(front_sensor_pins.mid, INPUT);
+  pinMode(front_sensor_pins.right, INPUT);
   
   //setting LEDs for Errors, movement
-  pinMode(LEDpin_error, OUTPUT);
+  pinMode(LEDpin_error, OUTPUT);/*
   pinMode(LEDpin_1, OUTPUT);
   pinMode(LEDpin_2, OUTPUT);
   pinMode(LEDpin_3, OUTPUT);
   //pinMode(LEDpin_mag, OUTPUT);
-  //pinMode(LEDpin_nonmag, OUTPUT);
+  //pinMode(LEDpin_nonmag, OUTPUT);*/
 
 }
 
 void loop() {
-
-  
-
+  correct_trajectory();
   Serial.println(" ");
   delay(20);
 }
