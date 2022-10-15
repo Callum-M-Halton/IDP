@@ -4,19 +4,22 @@
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *L_motor = AFMS.getMotor(1);
 Adafruit_DCMotor *R_motor = AFMS.getMotor(2);
-int LEDpin_error = 5;
+int LEDpin_error = 3;
 struct front_sensor_pins_struct {int left; int mid; int right;};
-front_sensor_pins_struct front_sensor_pins  = {2, 3, 4};
+front_sensor_pins_struct front_sensor_pins  = {0, 1, 2};
 
 
 struct speeds_struct {int tiny; int low; int med; int high;};
 speeds_struct speeds = {100, 150, 200, 250};
 
 struct offset_dirs_struct {int none; int left; int right; int unknown;};
-offset_dirs_struct offset_dirs = {0, 1, 2, 3};
+offset_dirs_struct offset_dirs = {0,1,2,3};
 
 struct offset_exts_struct {int none; int little; int mid; int far;};
-offset_exts_struct offset_exts = {0, 1, 2, 3};
+offset_exts_struct offset_exts = {0,1,2,3};
+
+struct line_end_likelihoods_struct {int none; int low; int med; int high; int as_before;};
+line_end_likelihoods_struct line_end_likelihoods = {0,1,2,3};
 
 struct state_struct {
   int motor_speeds[2]; int offset_dir;
@@ -40,10 +43,10 @@ void set_R_motor_speed(int speed) {
 	}
 }
 
-void correct_trajectory() {
+int correct_trajectory() {
   int sensors[3] = {digitalRead(front_sensor_pins.left),
     digitalRead(front_sensor_pins.mid), digitalRead(front_sensor_pins.right)};
-
+  int line_end_likelihood = line_end_likelihoods.none;
   if (sensors[0]) {
     if (sensors[1]) {
       if (sensors[2]) {
@@ -90,17 +93,37 @@ void correct_trajectory() {
 			  set_R_motor_speed(speeds.low);
       } else {
         // case [0, 0, 0]
-        if (state.offset_dir == offset_dirs.left) {
-					set_R_motor_speed(speeds.tiny);
-        } else if (state.offset_dir == offset_dirs.right) {
-					set_L_motor_speed(speeds.tiny);
+        // Don't do anything if not off the line in the last correction
+        if (state.offset_ext == offset_exts.far) {
+          line_end_likelihood = line_end_likelihoods.as_before;
         } else {
-          // ERROR
-          digitalWrite(LEDpin_error, 1);
+          // decide how to change motor speeds
+          if (state.offset_dir == offset_dirs.left) {
+            set_R_motor_speed(speeds.tiny);
+          } else if (state.offset_dir == offset_dirs.right) {
+            set_L_motor_speed(speeds.tiny);
+          }
+          // decide what the line_end_likelihood is 
+          /*
+          switch (state.offset_ext) {
+            case offset_exts.none:
+              line_end_likelihood = line_end_likelihoods.high;
+              break;
+            case offset_exts.little:
+              line_end_likelihood = line_end_likelihoods.med;
+              break;
+            case offset_exts.mid:
+              line_end_likelihood = line_end_likelihoods.low;
+              break;
+          }
+          */
+          // set new offset extent
+          state.offset_ext = offset_exts.far;
         }
       }
     }
   }
+  return line_end_likelihood;
 }
 
 void setup() {
@@ -119,10 +142,23 @@ void setup() {
   //pinMode(LEDpin_mag, OUTPUT);
   //pinMode(LEDpin_nonmag, OUTPUT);*/
 
+  if (!AFMS.begin(/*default frequency 1.6KHz*/)) {
+    Serial.println("Could not find Motor Shield. Check wiring.");
+    while (1);
+  }
+  Serial.println("Motor Shield found.");
+
+  L_motor->setSpeed(speeds.high);
+  R_motor->setSpeed(speeds.high);
+  L_motor->run(BACKWARD);
+  R_motor->run(BACKWARD);
+
+  
+
 }
 
 void loop() {
-  correct_trajectory();
+  //correct_trajectory();
   Serial.println(" ");
   delay(20);
 }
