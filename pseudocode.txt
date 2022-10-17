@@ -81,7 +81,8 @@ enum correct_trajectory():
 	switch sensor_vals:
 		case [0, 1, 0]:
 			state.line_offset = [offset_dirs.none, offset_exts.none]
-			set_motor_speed(True, speeds.med)
+			set_motor_speed(True, speeds.high)
+			set_motor_speed(False, speeds.high)
 		case [0, 1, 1]:
 			state.line_offset = [offset_dirs.left, offset_exts.little]
 			set_motor_speed(True, speeds.med)

@@ -8,43 +8,46 @@ int LEDpin_error = 3;
 struct front_sensor_pins_struct {int left; int mid; int right;};
 front_sensor_pins_struct front_sensor_pins  = {0, 1, 2};
 
-struct modes_struct{
-  int start;
-	int approaching_symmetric_junct;
-	int making_right_turn;
-	int basic; // (basic line following)
-	int approaching_block_on_line;
-	int testing_block;
-	int lowering_grabber;
-	int approaching_tunnel;
-	int in_tunnel;
-	int approaching_right_turn_to_take;
-	int approaching_box;
-	int raising_grabber;
-	int doing_a_180;
-	int lost_line;
-  }
-modes_struct modes = {1,2,3,4,5,6,7,8,9,10,11,12,13,14};
+struct modes_struct {
+  const int start;
+	const int approaching_symmetric_junct;
+	const int making_right_turn;
+	const int basic; // (basic line following)
+	const int approaching_block_on_line;
+	const int testing_block;
+	const int lowering_grabber;
+	const int approaching_tunnel;
+	const int in_tunnel;
+	const int approaching_right_turn_to_take;
+	const int approaching_box;
+	const int raising_grabber;
+	const int doing_a_180;
+	const int lost_line;
+};
+constexpr modes_struct modes = {1,2,3,4,5,6,7,8,9,10,11,12,13,14};
 
 struct speeds_struct {int tiny; int low; int med; int high;};
-speeds_struct speeds = {100, 150, 200, 250};
+speeds_struct speeds = {50, 150, 200, 250};
 
 struct offset_dirs_struct {int none; int left; int right; int unknown;};
 offset_dirs_struct offset_dirs = {0,1,2,3};
 
-struct offset_exts_struct {int none; int little; int mid; int far;};
-offset_exts_struct offset_exts = {0,1,2,3};
+struct offset_exts_struct {
+  const int none; const int little; const int mid; const int far;};
+constexpr offset_exts_struct offset_exts = {0,1,2,3};
 
 struct line_end_likelihoods_struct {int none; int low; int med; int high; int as_before;};
 line_end_likelihoods_struct line_end_likelihoods = {0,1,2,3};
 
 struct state_struct {
   int motor_speeds[2]; int offset_dir;
-  int offset_ext;
+  int offset_ext; int mode;
+  bool following_line;
 };
 state_struct state = {
   {0, 0}, offset_dirs.none,
-  offset_exts.none
+  offset_exts.none, -1, 
+  true
 };
 
 void set_L_motor_speed(int speed) {
@@ -58,6 +61,54 @@ void set_R_motor_speed(int speed) {
     state.motor_speeds[1] = speed;
     R_motor -> setSpeed(speed);
 	}
+}
+
+void set_mode(int mode) {
+  switch(mode) {
+    case modes.start:
+      state.following_line = false;
+      break;
+    case modes.approaching_symmetric_junct:
+      state.following_line = true;
+      break;
+    case modes.making_right_turn:
+      state.following_line = false;
+      break;
+    case modes.basic:
+      state.following_line = true;
+      break;
+    case modes.approaching_block_on_line:
+      state.following_line = true;
+      break;
+    case modes.testing_block:
+      state.following_line = false;
+      break;
+    case modes.lowering_grabber:
+      state.following_line = false;
+      break;
+    case modes.approaching_tunnel:
+      state.following_line = true;
+      break;
+    case modes.in_tunnel:
+      state.following_line = false;
+      break;
+    case modes.approaching_right_turn_to_take:
+      state.following_line = true;
+      break;
+    case modes.approaching_box:
+      state.following_line = true;
+      break;
+    case modes.raising_grabber:
+      state.following_line = false;
+      break;
+    case modes.doing_a_180:
+      state.following_line = false;
+      break;
+    case modes.lost_line:
+      state.following_line = false;
+      break;
+  }
+  state.mode = mode;
 }
 
 int correct_trajectory() {
@@ -121,7 +172,6 @@ int correct_trajectory() {
             set_L_motor_speed(speeds.tiny);
           }
           // decide what the line_end_likelihood is 
-          /*
           switch (state.offset_ext) {
             case offset_exts.none:
               line_end_likelihood = line_end_likelihoods.high;
@@ -133,7 +183,6 @@ int correct_trajectory() {
               line_end_likelihood = line_end_likelihoods.low;
               break;
           }
-          */
           // set new offset extent
           state.offset_ext = offset_exts.far;
         }
@@ -167,17 +216,18 @@ void setup() {
 
   L_motor->setSpeed(speeds.high);
   R_motor->setSpeed(speeds.high);
-  L_motor->run(BACKWARD);
-  R_motor->run(BACKWARD);
+  L_motor->run(FORWARD);
+  R_motor->run(FORWARD);
 
-  
+  set_mode(modes.basic);
 
 }
 
 void loop() {
-  //correct_trajectory();
-  Serial.println(" ");
-  delay(20);
+  if (state.following_line) {
+    correct_trajectory();
+  }
+  Serial.println(state.following_line);
 }
 
 /*

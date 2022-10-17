@@ -1,9 +1,9 @@
 // Sensor data receive on digital pin 0
-int sensorPin = 0;   
+int sensorPin = A0;   
 int sensorValue = 0;
 int avg = 0;
 // number of samples for the rolling avg
-const int sample_length = 200;
+const int sample_length = 100;
 // create array to store the last sample_length values for calculating our rolling avg
 int vals[sample_length];
 // i will count up each loop until sample_length is reached at which point avg can begin being calculated
