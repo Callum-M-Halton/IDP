@@ -1,10 +1,14 @@
 #include <Adafruit_MotorShield.h>
+#include <StackArray.h>
+#include <LinkedList.h>
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *L_motor = AFMS.getMotor(2);
 Adafruit_DCMotor *R_motor = AFMS.getMotor(1);
 int LEDpin_error = 3;
+const int MOTOR_CMDS_SIZE = 100;
+
 struct front_sensor_pins_struct {int left; int mid; int right;};
 front_sensor_pins_struct front_sensor_pins  = {2, 1, 0};
 
@@ -49,6 +53,8 @@ void print_mode(int mode) {
 struct speeds_struct {int tiny; int low; int med; int high;};
 speeds_struct speeds = {0, 100, 125, 250};
 
+// const int cycles_at_max_disparity_for_full_turn = 100;
+
 struct offset_dirs_struct {int none; int left; int right; int unknown;};
 offset_dirs_struct offset_dirs = {0,1,2,3};
 
@@ -58,46 +64,58 @@ constexpr offset_exts_struct offset_exts = {0,1,2,3};
 
 struct stblil_struct {int none; int as_before; int high; int med; int low; };
 stblil_struct suggested_timers_by_line_end_likelihoods = {
-  -2, -1, 50, 200, 300
+  -2, -1, 250, 500, 750
+};
+
+struct motor_cmd_struct {
+  bool is_right; int speed; unsigned long time_stamp;
 };
 
 struct state_struct {
   int motor_speeds[2]; int offset_dir;
   int offset_ext; int mode;
-  bool following_line; int count_down;
-  int prev_mode;
+  bool following_line; bool timer_set;
+  // may revert this to prev_mode if stack not needed
+  StackArray<int> prev_modes; unsigned long timer_end;
+  LinkedList<motor_cmd_struct> motor_cmds;
 };
 state_struct state = {
   {0, 0}, offset_dirs.none,
   offset_exts.none, -1, 
-  true, -1,
-  -1
+  false, false,
+  //
+  {}, 0,
+  LinkedList<motor_cmd_struct>(),
 };
 
-void set_L_motor_speed(int speed) {
-  speed *= 0.7;
-	if (state.motor_speeds[0] != speed) {
-    state.motor_speeds[0] = speed;
-    L_motor -> setSpeed(speed);
-	}
-}
-void set_R_motor_speed(int speed) {
-	if (state.motor_speeds[1] != speed) {
-    state.motor_speeds[1] = speed;
-    R_motor -> setSpeed(speed);
+void set_motor_speed(bool is_right, int speed) {
+  if (!is_right) {
+    speed *= 0.7;
+  }
+	if (state.motor_speeds[int(is_right)] != speed) {
+    state.motor_speeds[int(is_right)] = speed;
+    if (is_right) {
+      R_motor -> setSpeed(speed);
+    } else {
+      L_motor -> setSpeed(speed);
+    }
+    motor_cmd_struct motor_cmd = {is_right, speed, millis()};
+    state.motor_cmds.add(motor_cmd);
+    if (state.motor_cmds.size() > MOTOR_CMDS_SIZE) {
+      state.motor_cmds.shift();
+    }
 	}
 }
 
 void set_mode(int mode) {
+  state.following_line = false;
   switch(mode) {
     case modes.start:
-      state.following_line = false;
       break;
     case modes.approaching_symmetric_junct:
       state.following_line = true;
       break;
     case modes.making_right_turn:
-      state.following_line = false;
       break;
     case modes.basic:
       state.following_line = true;
@@ -106,16 +124,13 @@ void set_mode(int mode) {
       state.following_line = true;
       break;
     case modes.testing_block:
-      state.following_line = false;
       break;
     case modes.lowering_grabber:
-      state.following_line = false;
       break;
     case modes.approaching_tunnel:
       state.following_line = true;
       break;
     case modes.in_tunnel:
-      state.following_line = false;
       break;
     case modes.approaching_right_turn_to_take:
       state.following_line = true;
@@ -124,17 +139,18 @@ void set_mode(int mode) {
       state.following_line = true;
       break;
     case modes.raising_grabber:
-      state.following_line = false;
       break;
     case modes.doing_a_180:
-      state.following_line = false;
       break;
     case modes.lost_line:
-      state.following_line = false;
       break;
   }
   if (mode = modes.lost_line) {
     digitalWrite(LEDpin_error, HIGH);
+    L_motor->run(BACKWARD);
+    R_motor->run(BACKWARD);
+    Serial.println("lossssst liiiiiine!!!!!!!!");
+    state.prev_modes.push(state.mode);
   } else {
     digitalWrite(LEDpin_error, LOW);
   }
@@ -150,23 +166,23 @@ int correct_trajectory() {
       if (sensors[2]) {
         // case [1, 1, 1]
         // ERROR
-        digitalWrite(LEDpin_error, 1);
+        Serial.println("error: [1, 1, 1]");
       } else {
         // case [1, 1, 0]
         state.offset_dir = offset_dirs.right;
         state.offset_ext = offset_exts.little;
-			  set_L_motor_speed(speeds.med);
+			  set_motor_speed(false, speeds.med);
       }
     } else {
       if (sensors[2]) {
         // case [1, 0, 1]
         // ERROR
-        digitalWrite(LEDpin_error, 1);
+        Serial.println("error: [1, 0, 1]");
       } else {
         // case [1, 0, 0]
         state.offset_dir = offset_dirs.right;
         state.offset_ext = offset_exts.mid;
-			  set_L_motor_speed(speeds.low);
+			  set_motor_speed(false, speeds.low);
       }
     }
   } else {
@@ -175,20 +191,20 @@ int correct_trajectory() {
         // case [0, 1, 1]
         state.offset_dir = offset_dirs.left;
         state.offset_ext = offset_exts.little;
-			  set_R_motor_speed(speeds.med);
+			  set_motor_speed(true, speeds.med);
       } else {
         // case [0, 1, 0]
         state.offset_dir = offset_dirs.none;
         state.offset_ext = offset_exts.none;
-			  set_L_motor_speed(speeds.high);
-        set_R_motor_speed(speeds.high);
+			  set_motor_speed(false, speeds.high);
+        set_motor_speed(true, speeds.high);
       }
     } else {
       if (sensors[2]) {
         // case [0, 0, 1]
         state.offset_dir = offset_dirs.left;
         state.offset_ext = offset_exts.mid;
-			  set_R_motor_speed(speeds.low);
+			  set_motor_speed(true, speeds.low);
       } else {
         // case [0, 0, 0]
         // Don't do anything if not off the line in the last correction
@@ -198,9 +214,9 @@ int correct_trajectory() {
         } else {
           // decide how to change motor speeds
           if (state.offset_dir == offset_dirs.left) {
-            set_R_motor_speed(speeds.tiny);
+            set_motor_speed(true, speeds.tiny);
           } else if (state.offset_dir == offset_dirs.right) {
-            set_L_motor_speed(speeds.tiny);
+            set_motor_speed(false, speeds.tiny);
           }
           // decide what the line_end_likelihood is 
           switch (state.offset_ext) {
@@ -246,8 +262,8 @@ void setup() {
   Serial.println("Motor Shield found.");
 
   
-  set_L_motor_speed(speeds.high);
-  set_R_motor_speed(speeds.high);
+  set_motor_speed(false, speeds.high);
+  set_motor_speed(true, speeds.high);
   L_motor->run(FORWARD);
   R_motor->run(FORWARD);
   set_mode(modes.basic);
@@ -261,43 +277,50 @@ void print_sensor_vals() {
 }
 
 void loop() {
-  correct_trajectory();
-  // Line Follow if in a line_following mode
-  if (state.following_line) {
-    int suggested_timer = correct_trajectory();
-    bool approaching_EOL = (state.mode == modes.approaching_symmetric_junct
-      || state.mode == modes.approaching_tunnel
-      || state.mode == modes.approaching_box);
-    
-    if (suggested_timer != suggested_timers_by_line_end_likelihoods.none) {
-      // if there's an existing timer
-      if (suggested_timer == suggested_timers_by_line_end_likelihoods.as_before) {
-        state.count_down -= 1;
-        // if the timer has run out assume buggy off line
-        if (state.count_down == 0) {
-          if (approaching_EOL) {
-            // update sector
-          } else {
-            state.prev_mode = state.mode;
-            set_mode(modes.lost_line);
-            Serial.println("uuuuuh oohhhhhhh");
+  if (true) {
+    // Line Follow if in a line_following mode
+    if (state.following_line) {
+      int suggested_timer = correct_trajectory();
+      bool approaching_EOL = (state.mode == modes.approaching_symmetric_junct
+        || state.mode == modes.approaching_tunnel
+        || state.mode == modes.approaching_box);
+      
+      if (suggested_timer != suggested_timers_by_line_end_likelihoods.none) {
+        // if there's an existing timer
+        if (suggested_timer == suggested_timers_by_line_end_likelihoods.as_before) {
+          // if the timer has run out assume buggy off line
+          if (millis() >= state.timer_end) {
+            if (approaching_EOL) {
+              // update sector
+            } else {
+              set_mode(modes.lost_line);
+            }
           }
+        // Otherwise initialise countdown with suggested timer
+        } else if (approaching_EOL 
+            // i.e. if gone from [0, 1, 0] to [0, 0, 0]
+            || suggested_timer == suggested_timers_by_line_end_likelihoods.high) {
+          state.timer_end = millis() + suggested_timer;
         }
-      // Otherwise initialise countdown with suggested timer
-      } else if (approaching_EOL 
-          // i.e. if gone from [0, 1, 0] to [0, 0, 0]
-          || suggested_timer == suggested_timers_by_line_end_likelihoods.high) {
-        state.count_down = suggested_timer;
+      }
+    }
+
+    // Recover line if in lost_line mode
+    if (state.mode == modes.lost_line) {
+      if (digitalRead(front_sensor_pins.left) || digitalRead(front_sensor_pins.mid)
+          || digitalRead(front_sensor_pins.right)) {
+        L_motor->run(FORWARD);
+        R_motor->run(FORWARD);
+        set_mode(state.prev_modes.pop());
+      } else if (!state.timer_set || millis() >= state.timer_end) {
+          motor_cmd_struct last_cmd = state.motor_cmds.pop();
+          unsigned long timer_length = 
+            last_cmd.time_stamp - state.motor_cmds.get(state.motor_cmds.size() - 1).time_stamp;
+          state.timer_end = millis() + timer_length;
+          state.timer_set = true;
       }
     }
   }
-
-  // Recover line if in lost_line mode
-  if (state.mode == modes.lost_line) {
-    set_L_motor_speed(0);
-    set_R_motor_speed(0);
-  }
-
   //print_sensor_vals();
   //print_mode(state.mode);
 }
