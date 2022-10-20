@@ -2,53 +2,112 @@
 #include <StackArray.h>
 #include <LinkedList.h>
 
-// Create the motor shield object with the default I2C address
+// Initialise Motors
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *L_motor = AFMS.getMotor(2);
 Adafruit_DCMotor *R_motor = AFMS.getMotor(1);
-int LEDpin_error = 3;
+
+// Define lone constants
+const int ERROR_LED_PIN = 3;
 const int MOTOR_CMDS_SIZE = 100;
+const int TURN_DISPARITIES_SAMPLE_LENGTH = 100; //TUNE
+const int CURVING_LEFT_THRESHOLD = 100; //TUNE
 
 struct front_sensor_pins_struct {int left; int mid; int right;};
 front_sensor_pins_struct front_sensor_pins  = {2, 1, 0};
 
+// ============== MODES ==============
 struct modes_struct {
-  const int start;
-	const int approaching_symmetric_junct;
+  const int finding_line_at_start;
+  const int turning_at_symmetric_junction;
 	const int making_right_turn;
-	const int basic; // (basic line following)
-	const int approaching_block_on_line;
+	const int following_line;
 	const int testing_block;
 	const int lowering_grabber;
-	const int approaching_tunnel;
 	const int in_tunnel;
-	const int approaching_right_turn_to_take;
 	const int approaching_box;
 	const int raising_grabber;
 	const int doing_a_180;
-	const int lost_line;
+	const int refinding_line;
 };
-constexpr modes_struct modes = {1,2,3,4,5,6,7,8,9,10,11,12,13,14};
-
-// debug
-void print_mode(int mode) {
-  switch (mode) {
-    case modes.start: Serial.println("start"); break;
-    case modes.approaching_symmetric_junct: Serial.println("approaching_symmetric_junct"); break;
-    case modes.making_right_turn: Serial.println("making_right_turn"); break;
-    case modes.basic: Serial.println("basic"); break;
-    case modes.approaching_block_on_line: Serial.println("approaching_block_on_line"); break;
-    case modes.testing_block: Serial.println("testing_block"); break;
-    case modes.lowering_grabber: Serial.println("lowering_grabber"); break;
-    case modes.approaching_tunnel: Serial.println("approaching_tunnel"); break;
-    case modes.in_tunnel: Serial.println("in_tunnel"); break;
-    case modes.approaching_right_turn_to_take: Serial.println("approaching_right_turn_to_take"); break;
-    case modes.approaching_box: Serial.println("approaching_box"); break;
-    case modes.raising_grabber: Serial.println("raising_grabber"); break;
-    case modes.doing_a_180: Serial.println("doing_a_180"); break;
-    case modes.lost_line: Serial.println("lost_line"); break;
+constexpr modes_struct modes = {0,1,2,3,4,5,6,7,8,9,10};
+String modes_strings[11] = [
+  "finding_line_at_start",
+  "turning_at_symmetric_junction",
+	"making_right_turn",
+	"following_line",
+	"testing_block",
+	"lowering_grabber",
+	"in_tunnel",
+	"approaching_box",
+	"raising_grabber",
+	"doing_a_180",
+	"refinding_line",
+];
+void set_mode(int mode) {
+  switch(mode) {
+    case modes.refinding_line:
+      digitalWrite(ERROR_LED_PIN, HIGH);
+      L_motor->run(BACKWARD);
+      R_motor->run(BACKWARD);
+      Serial.println("lossssst liiiiiine!!!!!!!!");
+      state.prev_modes.push(state.mode);
+      break;
   }
+  Serial.println(mode_strings[state.mode] + "=> " + mode_strings[mode]);
+  state.mode = mode;
 }
+
+struct approachables_struct {
+  int nothing; int symmetric_junct; int block_on_line; int tunnel;
+  int right_turn_to_take; int cross; int corner;
+};
+things_to_approach_struct approachables = {1,2,3,4,5,6,7};
+
+struct on_loop_sector_struct {
+  String name;
+  int off_loop_sector_code;
+  int approaching;
+
+};
+
+// ORDER MATTERS!!!!!
+// ONLY MAIN LOOP ENUMERATED SO FAR
+struct on_loop_sector_codes_struct {
+  int start_junct_to_red_junct; int red_junct_to_corner_before_ramp;
+  int corner_before_ramp; int ramp_section;
+
+  int corner_after_ramp; int corner_after_ramp_to_cross;
+  int cross_to_corner_before_tunnel; int corner_before_tunnel;
+
+  int section_before_tunnel; int tunnel;
+  int section_after_tunnel; int corner_after_tunnel;
+  
+  int corner_after_tunnel_to_green_junct; int green_junct_to_start_junct;
+};
+sector_codes_struct SCs = {0,1,2,3,4,5,6,7,8,9,10,11,12};
+
+sector_struct sectors_array[13] = {
+  {"start_junct_to_red_junct", SCs.red_junct_to_corner_before_ramp, 0},
+  {"red_junct_to_corner_before_ramp", SCs.corner_before_ramp, 0},
+  {"corner_before_ramp", SCs.ramp_section, 0},
+  {"ramp_section", SCs.corner_after_ramp, 0},
+
+  {"corner_after_ramp", SCs.corner_after_ramp_to_cross, 0},
+  {"corner_after_ramp_to_cross", SCs.cross_to_corner_before_tunnel, 0},
+  {"cross_to_corner_before_tunnel", SCs.corner_before_tunnel, 0},
+  {"corner_before_tunnel", SCs.section_before_tunnel, 0},
+
+  {"section_before_tunnel", SCs.tunnel, 0},
+  {"tunnel", SCs.section_after_tunnel, 0},
+  {"section_after_tunnel", SCs.corner_after_tunnel, 0},
+  {"corner_after_tunnel", SCs.corner_after_tunnel_to_green_junct, 0},
+
+  {"corner_after_tunnel_to_green_junct", SCs.green_junct_to_start_junct, 0},
+  {"green_junct_to_start_junct", SCs.start_junct_to_red_junct, 0},
+
+  {"red_junct_to_red"}
+};
 
 struct speeds_struct {int tiny; int low; int med; int high;};
 speeds_struct speeds = {0, 100, 125, 250};
@@ -74,18 +133,20 @@ struct motor_cmd_struct {
 struct state_struct {
   int motor_speeds[2]; int offset_dir;
   int offset_ext; int mode;
-  bool following_line; bool timer_set;
+  bool timer_set; float avg_turns_disparity;
   // may revert this to prev_mode if stack not needed
   StackArray<int> prev_modes; unsigned long timer_end;
-  LinkedList<motor_cmd_struct> motor_cmds;
+  LinkedList<motor_cmd_struct> motor_cmds; unsigned long time_stamp_of_cmd_being_rev_run;
+  LinkedList<int> disparities_sample; 
 };
 state_struct state = {
   {0, 0}, offset_dirs.none,
   offset_exts.none, -1, 
-  false, false,
+  false, 0
   //
   {}, 0,
-  LinkedList<motor_cmd_struct>(),
+  LinkedList<motor_cmd_struct>(), 0,
+  LinkedList<int>() 
 };
 
 void set_motor_speed(bool is_right, int speed) {
@@ -105,56 +166,6 @@ void set_motor_speed(bool is_right, int speed) {
       state.motor_cmds.shift();
     }
 	}
-}
-
-void set_mode(int mode) {
-  state.following_line = false;
-  switch(mode) {
-    case modes.start:
-      break;
-    case modes.approaching_symmetric_junct:
-      state.following_line = true;
-      break;
-    case modes.making_right_turn:
-      break;
-    case modes.basic:
-      state.following_line = true;
-      break;
-    case modes.approaching_block_on_line:
-      state.following_line = true;
-      break;
-    case modes.testing_block:
-      break;
-    case modes.lowering_grabber:
-      break;
-    case modes.approaching_tunnel:
-      state.following_line = true;
-      break;
-    case modes.in_tunnel:
-      break;
-    case modes.approaching_right_turn_to_take:
-      state.following_line = true;
-      break;
-    case modes.approaching_box:
-      state.following_line = true;
-      break;
-    case modes.raising_grabber:
-      break;
-    case modes.doing_a_180:
-      break;
-    case modes.lost_line:
-      break;
-  }
-  if (mode = modes.lost_line) {
-    digitalWrite(LEDpin_error, HIGH);
-    L_motor->run(BACKWARD);
-    R_motor->run(BACKWARD);
-    Serial.println("lossssst liiiiiine!!!!!!!!");
-    state.prev_modes.push(state.mode);
-  } else {
-    digitalWrite(LEDpin_error, LOW);
-  }
-  state.mode = mode;
 }
 
 int correct_trajectory() {
@@ -239,6 +250,49 @@ int correct_trajectory() {
   return suggested_timer;
 }
 
+void print_sensor_vals() {
+  Serial.print(digitalRead(front_sensor_pins.left));
+  Serial.print(digitalRead(front_sensor_pins.mid));
+  Serial.println(digitalRead(front_sensor_pins.right));
+}
+
+void update_curving_left() {
+  // Calculate and add the new turns disparity to the list
+  int newest_disparity = state.motor_speeds[1] - state.motor_speeds[0];
+	state.disparities_sample.add(newest_disparity);
+	// Only possible when SAMPLE_LENGTH first reached so avg must be computed from scratch
+	if (state.disparities_sample.size() == TURN_DISPARITIES_SAMPLE_LENGTH) {
+    int tot = 0;
+    for (int i = 0; i < state.disparities_sample.size(); i++) {
+      tot += state.disparities_sample.get(i);
+    }
+		state.avg_turns_disparity = tot / TURN_DISPARITIES_SAMPLE_LENGTH;
+  } else if (state.disparities_sample.size() > TURN_DISPARITIES_SAMPLE_LENGTH) {
+		// Get and remove oldest turns disparity
+    int oldest_disparity = state.disparities_sample.pop();
+		// Remove contribution of oldest turns disparity from avg
+		state.avg_turns_disparity -= oldest_disparity / SAMPLE_LENGTH;
+		// Add contribution of newest turns disparity
+		state.avg_turns_disparity += newest_disparity / SAMPLE_LENGTH;
+
+    // If turns_disparity high enough,
+    // right wheel overdriven enough to be curving right
+    if (state.avg_turns_disparity > CURVING_LEFT_THRESHOLD) {
+      if (!state.curving_left) {
+        // From straight to curving
+        state.curving_left = true;
+        state.sector++;
+      }
+    } else {
+      if (state.curving_left) {
+        // From curving to straight
+        state.curving_left = false;
+        state.sector++;
+      }
+    }
+  }
+}
+
 void setup() {
   Serial.begin(9600);
 
@@ -248,7 +302,7 @@ void setup() {
   pinMode(front_sensor_pins.right, INPUT);
   
   //setting LEDs for Errors, movement
-  pinMode(LEDpin_error, OUTPUT);/*
+  pinMode(ERROR_LED_PIN, OUTPUT);/*
   pinMode(LEDpin_1, OUTPUT);
   pinMode(LEDpin_2, OUTPUT);
   pinMode(LEDpin_3, OUTPUT);
@@ -266,20 +320,14 @@ void setup() {
   set_motor_speed(true, speeds.high);
   L_motor->run(FORWARD);
   R_motor->run(FORWARD);
-  set_mode(modes.basic);
+  set_mode(modes.following_line);
 
-}
-
-void print_sensor_vals() {
-  Serial.print(digitalRead(front_sensor_pins.left));
-  Serial.print(digitalRead(front_sensor_pins.mid));
-  Serial.println(digitalRead(front_sensor_pins.right));
 }
 
 void loop() {
   if (true) {
-    // Line Follow if in a line_following mode
-    if (state.following_line) {
+    // Line Follow if in line following mode
+    if (state.mode = modes.following_line) {
       int suggested_timer = correct_trajectory();
       bool approaching_EOL = (state.mode == modes.approaching_symmetric_junct
         || state.mode == modes.approaching_tunnel
@@ -293,7 +341,7 @@ void loop() {
             if (approaching_EOL) {
               // update sector
             } else {
-              set_mode(modes.lost_line);
+              set_mode(modes.refinding_line);
             }
           }
         // Otherwise initialise countdown with suggested timer
@@ -305,17 +353,19 @@ void loop() {
       }
     }
 
-    // Recover line if in lost_line mode
-    if (state.mode == modes.lost_line) {
+    // Recover line if in refinding_line mode
+    if (state.mode == modes.refinding_line) {
       if (digitalRead(front_sensor_pins.left) || digitalRead(front_sensor_pins.mid)
           || digitalRead(front_sensor_pins.right)) {
+        set_motor_speed(false, 0); set_motor_speed(true, 0);
         L_motor->run(FORWARD);
         R_motor->run(FORWARD);
         set_mode(state.prev_modes.pop());
       } else if (!state.timer_set || millis() >= state.timer_end) {
+          if (!state.timer_set) { state.time_stamp_of_cmd_being_rev_run = millis(); }
           motor_cmd_struct last_cmd = state.motor_cmds.pop();
-          unsigned long timer_length = 
-            last_cmd.time_stamp - state.motor_cmds.get(state.motor_cmds.size() - 1).time_stamp;
+          unsigned long timer_length = state.time_stamp_of_cmd_being_rev_run - last_cmd.time_stamp;
+          state.time_stamp_of_cmd_being_rev_run = last_cmd.time_stamp;
           state.timer_end = millis() + timer_length;
           state.timer_set = true;
       }
