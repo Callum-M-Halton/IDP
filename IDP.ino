@@ -23,6 +23,8 @@ const int TURN_DISPARITIES_SAMPLE_LENGTH = 100; //TUNE
 const int CURVING_LEFT_THRESHOLD = 100; //TUNE
 const int GOING_STRAIGHT_THRESHOLD = 50; //TUNE
 const unsigned long TIME_TO_DRIVE_FORWARD_FOR_AT_START = 3000; //TUNE
+const int drop_grabber_value = 90; //TUNE
+const int raise_grabber_value = 0; //TUNE
 
 struct front_sensor_pins_struct {int left; int mid; int right;};
 front_sensor_pins_struct front_sensor_pins  = {2, 1, 0};
@@ -413,6 +415,14 @@ void leave_start() {
   set_sector(0);
 }
 
+void lowering_grabber(){
+    myservo.write(drop_grabber_value);
+}
+
+void raising_grabber(){
+    myservo.write(raise_grabber_value);
+}
+
 // ++++++++++++++++++
 
 // ======= BUILT IN FUNCTIONS ========
@@ -470,21 +480,6 @@ void loop() {
   //print_mode(state.mode);
 }
 // ++++++++++++++++++++
-
-/* FIX THIS PLEASE!!!!!!!
-int val1 = 0;
-int val2 = 0;
-void drop_grabber() {
-  myservo.write(0);
-  delay(3000);
-  myservo.write(0);
-  delay(3000);
-}
-*/
-
-
-
-
 
 /*
 // ORDER MATTERS!!!!!
