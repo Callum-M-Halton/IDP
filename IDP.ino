@@ -23,8 +23,8 @@ const int TURN_DISPARITIES_SAMPLE_LENGTH = 100; //TUNE
 const int CURVING_LEFT_THRESHOLD = 100; //TUNE
 const int GOING_STRAIGHT_THRESHOLD = 50; //TUNE
 const unsigned long TIME_TO_DRIVE_FORWARD_FOR_AT_START = 3000; //TUNE
-const int drop_grabber_value = 90; //TUNE
-const int raise_grabber_value = 0; //TUNE
+const int DROP_GRABBER_VALUE = 90; //TUNE
+const int RAISE_GRABBER_VALUE = 0; //TUNE
 
 struct front_sensor_pins_struct {int left; int mid; int right;};
 front_sensor_pins_struct front_sensor_pins  = {2, 1, 0};
@@ -77,27 +77,28 @@ struct on_loop_sector_struct {
   int off_loop_sector_code;
   int approaching;
   int associated_mode;
+  float speed_coeff;
 };
 
 const int num_of_on_loop_sectors = 14;
 on_loop_sector_struct on_loop_sectors[num_of_on_loop_sectors] = {
-  {"straight_after_start_junct", -1, approachables.junct_on_right, 0},
-  {"straight_afer_red_junct", -1, approachables.corner, 0},
-  {"corner_before_ramp", -1, approachables.straight, 0},
-  {"ramp_straight", -1, approachables.corner, 0},
+  {"straight_after_start_junct", -1, approachables.junct_on_right, 0, 1.0},
+  {"straight_afer_red_junct", -1, approachables.corner, 0, 1.0},
+  {"corner_before_ramp", -1, approachables.straight, 0, 1.0},
+  {"ramp_straight", -1, approachables.corner, 0, 1.0},
 
-  {"corner_after_ramp", -1, approachables.straight, 0},
-  {"straight_before_cross", -1, approachables.cross, 0},
-  {"straight_after_cross", -1, approachables.corner, 0},
-  {"corner_before_tunnel", -1, approachables.straight, 0},
+  {"corner_after_ramp", -1, approachables.straight, 0, 1.0},
+  {"straight_before_cross", -1, approachables.cross, 0, 1.0},
+  {"straight_after_cross", -1, approachables.corner, 0, 1.0},
+  {"corner_before_tunnel", -1, approachables.straight, 0, 1.0},
 
-  {"section_before_tunnel", -1, approachables.tunnel, 0},
-  {"tunnel", -1, approachables.line, modes.traversing_tunnel},
-  {"section_after_tunnel", -1, approachables.corner, 0},
-  {"corner_after_tunnel", -1, approachables.straight, 0},
+  {"section_before_tunnel", -1, approachables.tunnel, 0, 1.0},
+  {"tunnel", -1, approachables.line, modes.traversing_tunnel, 1.0},
+  {"section_after_tunnel", -1, approachables.corner, 0, 1.0},
+  {"corner_after_tunnel", -1, approachables.straight, 0, 1.0},
 
-  {"straight_before_green_junct", -1, approachables.junct_on_right, 0},
-  {"straight_after_green_junct", -1, approachables.junct_on_right, 0}
+  {"straight_before_green_junct", -1, approachables.junct_on_right, 0, 1.0},
+  {"straight_after_green_junct", -1, approachables.junct_on_right, 0, 1.0}
 };
 // ++++++++++++++++
 
@@ -121,26 +122,28 @@ struct motor_cmd_struct {
 };
 
 struct state_struct {
+  /*StackArray<int> prev_modes;*/
   int motor_speeds[2]; int offset_dir;
   int offset_ext; int mode;
   bool timer_set; float avg_turns_disparity;
   // may revert this to prev_mode if stack not needed
-  StackArray<int> prev_modes; unsigned long timer_end;
+  int approaching; unsigned long timer_end;
   LinkedList<motor_cmd_struct> motor_cmds; unsigned long time_stamp_of_cmd_being_rev_run;
   LinkedList<int> disparities_sample; int sector_code;
   //
-  int approaching; 
+  float speed_coeff;
 };
 state_struct state = {
+  /*{},*/
   {0, 0}, offset_dirs.none,
   offset_exts.none, -1, 
   false, 0,
   //
-  {}, 0,
+  -1, 0,
   LinkedList<motor_cmd_struct>(), 0,
   LinkedList<int>(), -1,
   //
-  -1
+  1.0
 };
 // ++++++++++++++++++++++
 
@@ -150,6 +153,7 @@ void set_sector(int sector_code) {
   on_loop_sector_struct sector = on_loop_sectors[sector_code];
   Serial.println("Sector set to: " + sector.name);
   state.approaching = sector.approaching;
+  state.speed_coeff = sector.speed_coeff;
   set_mode(sector.associated_mode);
 }
 
@@ -170,7 +174,6 @@ void set_mode(int mode) {
       digitalWrite(ERROR_LED_PIN, HIGH);
       set_motor_dirs(BACKWARD);
       Serial.println("lossssst liiiiiine!!!!!!!!");
-      state.prev_modes.push(state.mode);
     break;
   }
   Serial.println(mode_strings[state.mode] + "=> " + mode_strings[mode]);
@@ -191,6 +194,7 @@ void set_motor_dirs(int dir) {
 }
 
 void set_motor_speed(bool is_right, int speed) {
+  speed *= state.speed_coeff;
   if (!is_right) {
     speed *= 0.7;
   }
@@ -416,11 +420,11 @@ void leave_start() {
 }
 
 void lowering_grabber(){
-    myservo.write(drop_grabber_value);
+    myservo.write(DROP_GRABBER_VALUE);
 }
 
 void raising_grabber(){
-    myservo.write(raise_grabber_value);
+    myservo.write(RAISE_GRABBER_VALUE);
 }
 
 // ++++++++++++++++++
@@ -508,7 +512,7 @@ on_loop_sector_codes_struct OL_SCs = {0,1,2,3,4,5,6,7,8,9,10,11,12,13}; */
   //pinMode(LEDpin_mag, OUTPUT);
   //pinMode(LEDpin_nonmag, OUTPUT);*/
 
-  /*
+/*
 unsigned long time_now = 0;
 // to turn 90 degrees in one way for either leaving box or when object is located
 void turn_on_spot(to_the_right) {
