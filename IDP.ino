@@ -6,30 +6,32 @@
 
 // Initialise Motors and Servo
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
-Adafruit_DCMotor *L_motor = AFMS.getMotor(2);
-Adafruit_DCMotor *R_motor = AFMS.getMotor(1);
+Adafruit_DCMotor *L_motor = AFMS.getMotor(4);
+Adafruit_DCMotor *R_motor = AFMS.getMotor(3);
 Servo myservo;
 
 // Define constants
 // pins (not settled)
-const int ERROR_LED_PIN = 3;
-const int JUNCT_SENSOR_PIN = 4;
-const int ECHO_PIN = 5; // attach pin D2 Arduino to pin Echo of HC-SR04
-const int TRIG_PIN = 6; //attach pin D3 Arduino to pin Trig of HC-SR04
-const int SERVO_PIN = 7;
+const int JUNCT_SENSOR_PIN = 3;
+struct front_sensor_pins_struct {int left; int mid; int right;};
+front_sensor_pins_struct front_sensor_pins  = {0,1,2};
+const int ERROR_LED_PIN = 4;
+const int SERVO_PIN = 5;
+struct US_pins_struct {int echo; int trig;};
+US_pins_struct front_US_pins = {6, 7}; // for HC-SR04
+US_pins_struct side_US_pins = {8, 9}; // for HC-SR04
 // other
 const int MOTOR_CMDS_SIZE = 100;
 const int TURN_DISPARITIES_SAMPLE_LENGTH = 100; //TUNE
-const int CURVING_LEFT_THRESHOLD = 100; //TUNE
+const int CURVING_LEFT_THRESHOLD = 10000; //TUNE
 const int GOING_STRAIGHT_THRESHOLD = 50; //TUNE
 const unsigned long TIME_TO_DRIVE_FORWARD_FOR_AT_START = 3000; //TUNE
 const int DROP_GRABBER_VALUE = 90; //TUNE
 const int RAISE_GRABBER_VALUE = 0; //TUNE
-
-struct front_sensor_pins_struct {int left; int mid; int right;};
-front_sensor_pins_struct front_sensor_pins  = {2, 1, 0};
-struct speeds_struct {int tiny; int low; int med; int high;};
-speeds_struct speeds = {0, 100, 125, 250};
+struct speeds_struct {int tiny; int low; int med; int high; int tunnel;};
+speeds_struct speeds = {0, 50, 150, 255, 100};
+struct stblil_struct {int none; int as_before; int high; int med; int low; };
+stblil_struct suggested_timers_by_line_end_likelihoods = { -2, -1, 1000, 10000, 10000 };
 
 // ============== MODES ==============
 struct modes_struct {
@@ -48,10 +50,10 @@ struct modes_struct {
 };
 constexpr modes_struct modes = {0,1,2,3,4,5,6,7,8,9,10,11};
 String mode_strings[12] = {
+"following_line",
 "finding_line_at_start",
 "turning_at_symmetric_junction",
 "making_right_turn",
-"following_line",
 "testing_block",
 "lowering_grabber",
 "traversing_tunnel",
@@ -66,10 +68,10 @@ String mode_strings[12] = {
 
 // ======= SECTORS =========
 struct approachables_struct {
-  int block_on_line; int tunnel;
-  int junct_on_right; int cross; int corner; int straight; int line;
+  const int tunnel; const int straight; int nothing;
+  const int junct_on_right; const int corner;
 };
-approachables_struct approachables = {0,1,2,3,4,5,6};
+constexpr approachables_struct approachables = {0,1,2,3,4};
 
 struct on_loop_sector_struct {
   String name;
@@ -80,7 +82,7 @@ struct on_loop_sector_struct {
   float speed_coeff;
 };
 
-const int num_of_on_loop_sectors = 14;
+const int num_of_on_loop_sectors = 13;
 on_loop_sector_struct on_loop_sectors[num_of_on_loop_sectors] = {
   {"straight_after_start_junct", -1, approachables.junct_on_right, 0, 1.0},
   {"straight_afer_red_junct", -1, approachables.corner, 0, 1.0},
@@ -88,12 +90,11 @@ on_loop_sector_struct on_loop_sectors[num_of_on_loop_sectors] = {
   {"ramp_straight", -1, approachables.corner, 0, 1.0},
 
   {"corner_after_ramp", -1, approachables.straight, 0, 1.0},
-  {"straight_before_cross", -1, approachables.cross, 0, 1.0},
-  {"straight_after_cross", -1, approachables.corner, 0, 1.0},
+  {"block_straight", -1, approachables.corner, 0, 1.0}, // sector 5
   {"corner_before_tunnel", -1, approachables.straight, 0, 1.0},
 
-  {"section_before_tunnel", -1, approachables.tunnel, 0, 1.0},
-  {"tunnel", -1, approachables.line, modes.traversing_tunnel, 1.0},
+  {"section_before_tunnel", -1, approachables.tunnel, 0, 0.7},
+  {"tunnel", -1, approachables.nothing, modes.traversing_tunnel, 1.0},
   {"section_after_tunnel", -1, approachables.corner, 0, 1.0},
   {"corner_after_tunnel", -1, approachables.straight, 0, 1.0},
 
@@ -107,13 +108,9 @@ struct offset_dirs_struct {int none; int left; int right; int unknown;};
 offset_dirs_struct offset_dirs = {0,1,2,3};
 
 struct offset_exts_struct {
-  const int none; const int little; const int mid; const int far;};
-constexpr offset_exts_struct offset_exts = {0,1,2,3};
-
-struct stblil_struct {int none; int as_before; int high; int med; int low; };
-stblil_struct suggested_timers_by_line_end_likelihoods = {
-  -2, -1, 250, 500, 750
+  const int none; const int little; const int mid; const int far;
 };
+constexpr offset_exts_struct offset_exts = {0,1,2,3};
 // ++++++++++++++++++++
 
 // ===== STATE ========
@@ -131,7 +128,7 @@ struct state_struct {
   LinkedList<motor_cmd_struct> motor_cmds; unsigned long time_stamp_of_cmd_being_rev_run;
   LinkedList<int> disparities_sample; int sector_code;
   //
-  float speed_coeff;
+  float speed_coeff; int blocks_collected;
 };
 state_struct state = {
   /*{},*/
@@ -139,11 +136,11 @@ state_struct state = {
   offset_exts.none, -1, 
   false, 0,
   //
-  -1, 0,
+  approachables.nothing, 0,
   LinkedList<motor_cmd_struct>(), 0,
   LinkedList<int>(), -1,
   //
-  1.0
+  1.0, 1 /////////// 1 for testing, 0 in production!!!!!
 };
 // ++++++++++++++++++++++
 
@@ -176,7 +173,7 @@ void set_mode(int mode) {
       Serial.println("lossssst liiiiiine!!!!!!!!");
     break;
   }
-  Serial.println(mode_strings[state.mode] + "=> " + mode_strings[mode]);
+  Serial.println("Mode set to: " + mode_strings[mode]);
   state.mode = mode;
 }
 // ++++++++++++++++++++++
@@ -195,8 +192,9 @@ void set_motor_dirs(int dir) {
 
 void set_motor_speed(bool is_right, int speed) {
   speed *= state.speed_coeff;
-  if (!is_right) {
-    speed *= 0.7;
+  // underdrives right motor to match left motor
+  if (is_right) {
+    speed *= 0.9;
   }
 	if (state.motor_speeds[int(is_right)] != speed) {
     state.motor_speeds[int(is_right)] = speed;
@@ -227,12 +225,13 @@ int correct_trajectory() {
       if (sensors[2]) {
         // case [1, 1, 1]
         // ERROR
-        Serial.println("error: [1, 1, 1]");
+        //Serial.println("error: [1, 1, 1]");
       } else {
         // case [1, 1, 0]
         state.offset_dir = offset_dirs.right;
         state.offset_ext = offset_exts.little;
 			  set_motor_speed(false, speeds.med);
+        set_motor_speed(true, speeds.high);
       }
     } else {
       if (sensors[2]) {
@@ -244,6 +243,7 @@ int correct_trajectory() {
         state.offset_dir = offset_dirs.right;
         state.offset_ext = offset_exts.mid;
 			  set_motor_speed(false, speeds.low);
+        set_motor_speed(true, speeds.high);
       }
     }
   } else {
@@ -253,6 +253,7 @@ int correct_trajectory() {
         state.offset_dir = offset_dirs.left;
         state.offset_ext = offset_exts.little;
 			  set_motor_speed(true, speeds.med);
+        set_motor_speed(false, speeds.high);
       } else {
         // case [0, 1, 0]
         state.offset_dir = offset_dirs.none;
@@ -266,6 +267,7 @@ int correct_trajectory() {
         state.offset_dir = offset_dirs.left;
         state.offset_ext = offset_exts.mid;
 			  set_motor_speed(true, speeds.low);
+        set_motor_speed(false, speeds.high);
       } else {
         // case [0, 0, 0]
         // Don't do anything if not off the line in the last correction
@@ -276,8 +278,10 @@ int correct_trajectory() {
           // decide how to change motor speeds
           if (state.offset_dir == offset_dirs.left) {
             set_motor_speed(true, speeds.tiny);
+            set_motor_speed(false, speeds.high);
           } else if (state.offset_dir == offset_dirs.right) {
             set_motor_speed(false, speeds.tiny);
+            set_motor_speed(true, speeds.high);
           }
           // decide what the line_end_likelihood is 
           switch (state.offset_ext) {
@@ -341,49 +345,57 @@ void update_turns_disparity_and_sector(bool approaching_corner) {
 }
 
 // update to allow which sensor to be specified
-int get_ultrasonic_distance() {
+int get_ultrasonic_distance(US_pins_struct US_pins) {
   // Clears the TRIG_PIN condition
-  digitalWrite(TRIG_PIN, LOW);
+  digitalWrite(US_pins.trig, LOW);
   delayMicroseconds(2);
   // Sets the TRIG_PIN HIGH (ACTIVE) for 10 microseconds
-  digitalWrite(TRIG_PIN, HIGH);
+  digitalWrite(US_pins.trig, HIGH);
   delayMicroseconds(10);
-  digitalWrite(TRIG_PIN, LOW);
+  digitalWrite(US_pins.trig, LOW);
   // Reads the ECHO_PIN, returns the sound wave travel time in microseconds
-  long duration = pulseIn(ECHO_PIN, HIGH);
+  long duration = pulseIn(US_pins.echo, HIGH);
   // Calculating the distance
   int distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
   // Displays the distance on the Serial Monitor
-  Serial.print("Distance in cm: ");
-  Serial.print(distance);
+  Serial.println("Distance in cm: " + String(distance));
   return distance;
 }
 
 void follow_line_step() {
   int suggested_timer = correct_trajectory();
-  bool approaching_EOL = (state.approaching == approachables.tunnel);
+  bool approaching_EOL = false;//(state.approaching == approachables.tunnel);
   if (suggested_timer != suggested_timers_by_line_end_likelihoods.none) {
     // if there's an existing timer
     if (suggested_timer == suggested_timers_by_line_end_likelihoods.as_before) {
-      // if the timer has run out assume buggy off line
-      if (millis() >= state.timer_end) {
+      // if the timer is valid (not set to the null state of -1)...
+      // ... and it has run out, assume buggy off line
+      if (state.timer_end >= 0 && millis() >= state.timer_end) {
         if (approaching_EOL) {
-          // update sector
+          next_on_loop_sector();
         } else {
           set_mode(modes.refinding_line);
+          Serial.println("eeeeeeee");
         }
       }
-    // Otherwise initialise countdown with suggested timer
+    // Otherwise if expecting an end of line...
     } else if (approaching_EOL 
-        // i.e. if gone from [0, 1, 0] to [0, 0, 0]
+        // ... or gone from [0, 1, 0] to [0, 0, 0]
         || suggested_timer == suggested_timers_by_line_end_likelihoods.high) {
+      Serial.println("aaaaaaaaaaaaaaa");
+      // set timer
       state.timer_end = millis() + suggested_timer;
+    // Otherwise not expecting end of line and not [0, 1, 0] to [0, 0, 0]...
+    } else {
+      // ... so set a timer_end to the null state -1, which will never run out
+      state.timer_end = -1;
     }
   }
 }
 
 void refind_line_step() {
   if (any_front_line_sensors_firing) {
+    digitalWrite(ERROR_LED_PIN, LOW);
     set_mode(modes.following_line);
   } else if (!state.timer_set || millis() >= state.timer_end) {
       if (!state.timer_set) { state.time_stamp_of_cmd_being_rev_run = millis(); }
@@ -427,16 +439,26 @@ void raising_grabber(){
     myservo.write(RAISE_GRABBER_VALUE);
 }
 
+void traverse_tunnel() {
+  set_motor_speeds(speeds.tunnel);
+  while (!any_front_line_sensors_firing()) {
+    delayMicroseconds(1);
+  }
+  next_on_loop_sector();
+}
 // ++++++++++++++++++
 
 // ======= BUILT IN FUNCTIONS ========
 void setup() {
+  set_motor_speeds(0);
+  delay(10000);
   Serial.begin(9600);
 
   // attach Servo and configure ultrasonic pins
   myservo.attach(SERVO_PIN);
-  pinMode(TRIG_PIN, OUTPUT); // Sets the TRIG_PIN as an OUTPUT
-  pinMode(ECHO_PIN, INPUT); // Sets the ECHO_PIN as an INPUT
+  // Set trig pins as outputs and echo pins as inputs
+  pinMode(front_US_pins.trig, OUTPUT);  pinMode(side_US_pins.trig, OUTPUT);
+  pinMode(front_US_pins.echo, INPUT);  pinMode(side_US_pins.echo, INPUT);
 
   // Setting the IR sensor pins as inputs
   pinMode(front_sensor_pins.left, INPUT);
@@ -454,19 +476,21 @@ void setup() {
   Serial.println("Motor Shield found.");
 
   // state configuration
-  set_mode(modes.finding_line_at_start);
+  set_sector(5);
+  // set_mode(modes.finding_line_at_start);
 }
 
 void loop() {
   if (true) {
     // Check if any of the things being approached have been reached
+    /*
     if (state.approaching == approachables.corner 
         || state.approaching == approachables.straight) {
       update_turns_disparity_and_sector(
         state.approaching == approachables.corner
       );
     }
-
+    */
     // Execute mode functionality depending on state.mode
     switch (state.mode) {
       case modes.finding_line_at_start:
@@ -478,9 +502,15 @@ void loop() {
       case modes.refinding_line:
         refind_line_step();
       break;
+      case modes.traversing_tunnel:
+        traverse_tunnel();
+      break;
     }
   }
+  //set_motor_speeds(255);
+  //set_motor_dirs(FORWARD);
   //print_sensor_vals();
+  //Serial.println(digitalRead(JUNCT_SENSOR_PIN));
   //print_mode(state.mode);
 }
 // ++++++++++++++++++++
