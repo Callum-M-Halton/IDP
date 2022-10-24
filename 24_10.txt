@@ -31,20 +31,14 @@ void traversing_tunnel(){
     //checks if going closer to the wall
     if (tunnel_dist <= (avg*(1-tunnel_threshold))){
         //going left so need to go right slightly
-        state.offset_dir = offset_dirs.left;
-        state.offset_ext = offset_exts.little;
 		set_motor_speed(true, speeds.med);
 
     } else if (tunnel_dist >= (avg*(1+tunnel_threshold))){
-        //going right so need to go left 
-        state.offset_dir = offset_dirs.right;
-        state.offset_ext = offset_exts.little;
+        //going right so need to go left
 	    set_motor_speed(false, speeds.med);
 
     } else {
         //go straight
-        state.offset_dir = offset_dirs.none;
-        state.offset_ext = offset_exts.none;
 		set_motor_speed(false, speeds.high);
         set_motor_speed(true, speeds.high);
     }
