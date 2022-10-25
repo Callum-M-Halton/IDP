@@ -58,9 +58,12 @@ void leave_start() {
   
   // turns right until line detected
   // set direction to turn right
-  L_motor->run(FORWARD);
-  R_motor->run(BACKWARD);  
-  set_motor_speeds(speeds.high);
+  //L_motor->run(FORWARD);
+  //R_motor->run(BACKWARD);
+  set_motor_dir(false, FORWARD)
+  set_motor_dir(true, BACKWARDS)
+
+  set_motor_speeds(speeds.med);
   // while no front sensors are firing
   while (!any_front_line_sensors_firing()){
     delayMicroseconds(1);
@@ -73,8 +76,10 @@ void leave_start() {
 /*
 void leave_start(){
   //rotate right slightly to hit line at angle
-  L_motor->run(FORWARD);
-  R_motor->run(BACKWARD);  
+  //L_motor->run(FORWARD);
+  //R_motor->run(BACKWARD);
+  set_motor_dir(false, FORWARD)
+  set_motor_dir(true, BACKWARDS)  
   set_motor_speeds(speeds.med);
   delay(500)
 
