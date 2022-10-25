@@ -1,10 +1,15 @@
 #include <Arduino.h>
 
 void setup() {
-  set_motor_speeds(0);
-  set_motor_dirs(FORWARD);
-  delay(10000);
   Serial.begin(9600);
+  // Connecting to motors
+  if (!AFMS.begin(/*default frequency 1.6KHz*/)) {
+    Serial.println("Could not find Motor Shield. Check wiring.");
+    while (1);
+  }
+  Serial.println("Motor Shield found.");
+  // Make sure we don't start moving prematurely
+  set_motor_speeds(0);
 
   // attach Servo and configure ultrasonic pins
   myservo.attach(SERVO_PIN);
@@ -19,15 +24,20 @@ void setup() {
   
   // Setting LEDs for errors
   pinMode(ERROR_LED_PIN, OUTPUT);
+  pinMode(AMBER_LED_PIN, OUTPUT);
 
-  // Connecting to motors
-  if (!AFMS.begin(/*default frequency 1.6KHz*/)) {
-    Serial.println("Could not find Motor Shield. Check wiring.");
-    while (1);
+  if (false) {
+    turn_on_spot(false);
+    delay(500);
+    set_motor_dirs(FORWARD);
+    set_motor_speeds(255);
+    delay(1000);
+    turn_on_spot(true);
+    delay(500);
+    set_motor_dirs(FORWARD);
+    set_motor_speeds(255);
+    delay(1000);
   }
-  Serial.println("Motor Shield found.");
-  start_millis = millis();
-  // state configuration
-  set_sector(5);
-  // set_mode(modes.finding_line_at_start);
+
+  leave_start();
 }

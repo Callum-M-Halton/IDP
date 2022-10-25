@@ -6,6 +6,19 @@ bool any_front_line_sensors_firing() {
     || digitalRead(front_sensor_pins.right);
 }
 
+void add_motor_cmd(bool is_flag = false) {
+  motor_cmd_struct motor_cmd = {
+    {state.motor_dirs[0], state.motor_dirs[1]},
+    {state.motor_speeds[0], state.motor_speeds[1]},
+    millis(),
+    is_flag
+  };
+  state.motor_cmds.add(motor_cmd);
+  if (state.motor_cmds.size() > MOTOR_CMDS_SIZE) {
+    state.motor_cmds.shift();
+  }
+}
+
 void set_motor_dir(bool is_right, int dir, bool record = true) {
   if (state.motor_dirs[int(is_right)] != dir) {
     state.motor_dirs[int(is_right)] = dir;
@@ -36,20 +49,10 @@ void set_motor_speed(bool is_right, int speed, bool record = true) {
     }
     if (record) { add_motor_cmd(); }
 	}
-  if (speed > 0){
-    digitalWrite(AMBER_LED_PIN,HIGH)
-  }
-}
-
-void add_motor_cmd() {
-  motor_cmd_struct motor_cmd = {
-    {state.motor_speeds[0], state.motor_speeds[1]},
-    {state.motor_dirs[0], state.motor_dirs[1]},
-    millis()
-  };
-  state.motor_cmds.add(motor_cmd);
-  if (state.motor_cmds.size() > MOTOR_CMDS_SIZE) {
-    state.motor_cmds.shift();
+  if (state.motor_speeds[0] == 0 && state.motor_speeds[1] == 0){
+    digitalWrite(AMBER_LED_PIN, LOW);
+  } else {
+    digitalWrite(AMBER_LED_PIN, HIGH);
   }
 }
 
@@ -64,10 +67,26 @@ void print_sensor_vals() {
   Serial.println(digitalRead(front_sensor_pins.right));
 }
 
-void lowering_grabber(){
+void lower_grabber() {
     myservo.write(DROP_GRABBER_VALUE);
 }
 
-void raising_grabber(){
+void raise_grabber() {
     myservo.write(RAISE_GRABBER_VALUE);
+}
+
+
+void turn_on_spot(bool to_right) {
+    if (to_right){
+        // set direction to turn right
+        set_motor_dir(false, FORWARD);
+        set_motor_dir(true, BACKWARD);
+    } else {
+        // set direction to turn left
+        set_motor_dir(true, FORWARD);
+        set_motor_dir(false, BACKWARD);
+    }
+    
+    set_motor_speed(true, 255); //right motor
+    set_motor_speed(false, 255); //left motor
 }

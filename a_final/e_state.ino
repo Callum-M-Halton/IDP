@@ -14,31 +14,28 @@ struct motor_cmd_struct {
   int dirs[2];
   int speeds[2];
   unsigned long time_stamp;
+  bool is_flag;
 };
 
 struct state_struct {
-  /*StackArray<int> prev_modes;*/
   int motor_speeds[2]; int offset_dir;
-  int offset_ext; int mode;
-  bool timer_set; float avg_turns_disparity;
+  int offset_ext; float avg_turns_disparity;
   // may revert this to prev_mode if stack not needed
   int approaching; unsigned long timer_end;
   LinkedList<motor_cmd_struct> motor_cmds; unsigned long time_stamp_of_cmd_being_rev_run;
   LinkedList<int> disparities_sample; int sector_code;
   //
-  float speed_coeff; int blocks_collected;
-  int motor_dirs[2];
+  int blocks_collected; int motor_dirs[2];
+  int sector_code_to_turn_off_after; float speed_coeff;
 };
 state_struct state = {
-  /*{},*/
-  {0, 0}, offset_dirs.none,
-  offset_exts.none, -1, 
-  false, 0,
+  {-1, -1}, offset_dirs.none,
+  offset_exts.none, 0,
   //
   approachables.nothing, 0,
   LinkedList<motor_cmd_struct>(), 0,
   LinkedList<int>(), -1,
   //
-  1.0, 1, /////////// 1 for testing, 0 in production!!!!!
-  {FORWARD, FORWARD}
+  0, {-1, -1},
+  -1, 1.0
 };

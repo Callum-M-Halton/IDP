@@ -1,6 +1,8 @@
 #include <Arduino.h>
 
 int correct_trajectory() {
+  set_motor_dirs(FORWARD);
+  set_motor_speeds(speeds.high);
   int sensors[3] = {digitalRead(front_sensor_pins.left),
     digitalRead(front_sensor_pins.mid), digitalRead(front_sensor_pins.right)};
   int suggested_timer = suggested_timers_by_line_end_likelihoods.none;
@@ -14,7 +16,7 @@ int correct_trajectory() {
         // case [1, 1, 0]
         state.offset_dir = offset_dirs.right;
         state.offset_ext = offset_exts.little;
-		set_motor_speed(false, speeds.med);
+		    set_motor_speed(false, speeds.med);
         set_motor_speed(true, speeds.high);
       }
     } else {
@@ -26,7 +28,7 @@ int correct_trajectory() {
         // case [1, 0, 0]
         state.offset_dir = offset_dirs.right;
         state.offset_ext = offset_exts.mid;
-		set_motor_speed(false, speeds.low);
+		    set_motor_speed(false, speeds.low);
         set_motor_speed(true, speeds.high);
       }
     }
@@ -36,13 +38,13 @@ int correct_trajectory() {
         // case [0, 1, 1]
         state.offset_dir = offset_dirs.left;
         state.offset_ext = offset_exts.little;
-		set_motor_speed(true, speeds.med);
+		    set_motor_speed(true, speeds.med);
         set_motor_speed(false, speeds.high);
       } else {
         // case [0, 1, 0]
         state.offset_dir = offset_dirs.none;
         state.offset_ext = offset_exts.none;
-		set_motor_speed(false, speeds.high);
+		    set_motor_speed(false, speeds.high);
         set_motor_speed(true, speeds.high);
       }
     } else {
@@ -50,7 +52,7 @@ int correct_trajectory() {
         // case [0, 0, 1]
         state.offset_dir = offset_dirs.left;
         state.offset_ext = offset_exts.mid;
-		set_motor_speed(true, speeds.low);
+		    set_motor_speed(true, speeds.low);
         set_motor_speed(false, speeds.high);
       } else {
         // case [0, 0, 0]

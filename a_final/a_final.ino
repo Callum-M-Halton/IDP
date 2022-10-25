@@ -1,5 +1,4 @@
 #include <Adafruit_MotorShield.h>
-#include <StackArray.h>
 #include <LinkedList.h>
 #include <Servo.h>
 
@@ -30,22 +29,6 @@ int get_ultrasonic_distance(US_pins_struct US_pins) {
   return distance;
 }
 
-void turn_on_spot(bool to_the_right) {
-    if (to_the_right){
-        // set direction to turn right
-        L_motor->run(FORWARD);
-        R_motor->run(BACKWARD);
-    } else {
-        // set direction to turn left
-        L_motor->run(BACKWARD);
-        R_motor->run(FORWARD);
-    }
-    
-    int turn_period = 500; // need to calibrate
-    set_motor_speed(true, 255); //right motor
-    set_motor_speed(false, 255); //left motor
-    delay(turn_period); // not gonna be doing anything apart form turning if turning on spot anyway
-}
 
 // ====================== JUNK ======================
 /*

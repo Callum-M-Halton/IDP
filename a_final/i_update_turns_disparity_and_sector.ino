@@ -29,7 +29,7 @@ void update_turns_disparity_and_sector(bool approaching_corner) {
         (state.avg_turns_disparity < GOING_STRAIGHT_THRESHOLD
         && !approaching_corner)
     ) {
-      next_on_loop_sector();
+      next_sector();
     }
   }
 }

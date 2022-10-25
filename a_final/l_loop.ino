@@ -1,47 +1,31 @@
 #include <Arduino.h>
 
 void loop() {
-  if (true) {
-    // Check if any of the things being approached have been reached
-    /*
+  if (false) {
+    // Sensor checking based on what we're approaching
     if (state.approaching == approachables.corner 
         || state.approaching == approachables.straight) {
       update_turns_disparity_and_sector(
         state.approaching == approachables.corner
       );
+    } else if (state.approaching == approachables.junct_on_right) {
+      if (digitalRead(JUNCT_SENSOR_PIN)) {
+        if (state.sector_code == state.sector_code_to_turn_off_after) {
+          make_right_turn();
+        }
+      }
     }
-    */
-    // Execute mode functionality depending on state.mode
-    switch (state.mode) {
-      case modes.finding_line_at_start:
-        leave_start();
-      break;
-      case modes.following_line:
-        follow_line_step();
-      break;
-      case modes.refinding_line:
-        refind_line_step();
-      break;
-      case modes.traversing_tunnel:
-        traverse_tunnel();
-      break;
+
+    // line following 
+    follow_line_step();
+
+    // time checking
+    if (state.sector_code_to_turn_off_after == -1 
+        && millis() > TIME_BEFORE_HEADING_BACK) {
+      // head home at the next opportunity, sector_code 12 is "straight_before_start_junct"
+      state.sector_code_to_turn_off_after = 
     }
   }
-  if (millis() >= start_millis + 5000) {
-    set_mode(modes.lowering_grabber);
-    turn_on_spot(false);
-    set_motor_dirs(FORWARD);
-    set_motor_speeds(255);
-    delay(1000);
-    turn_on_spot(true);
-    set_motor_dirs(FORWARD);
-    set_motor_speeds(255);
-    delay(1000);
-    set_mode(modes.refinding_line);
-    start_millis = 60000;
-  }
-  //set_motor_speeds(255);
-  //set_motor_dirs(FORWARD);
   //print_sensor_vals();
   //Serial.println(digitalRead(JUNCT_SENSOR_PIN));
   //print_mode(state.mode);
