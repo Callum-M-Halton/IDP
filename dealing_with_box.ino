@@ -73,7 +73,7 @@ void deal_with_line_block(){
     bool block_flag = false;
 
     while (block_flag == false){
-        float current_distance = get_ultrasonic_distance();
+        float current_distance = get_ultrasonic_distance(front_US_pins);
         //slow down when distance is 10cm
         if ((current_distance) < 10){
             //set coeeficient to 0.3
