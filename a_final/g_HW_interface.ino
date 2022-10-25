@@ -36,6 +36,9 @@ void set_motor_speed(bool is_right, int speed, bool record = true) {
     }
     if (record) { add_motor_cmd(); }
 	}
+  if (speed > 0){
+    digitalWrite(AMBER_LED_PIN,HIGH)
+  }
 }
 
 void add_motor_cmd() {
