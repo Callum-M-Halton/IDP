@@ -5,6 +5,9 @@ const int JUNCT_SENSOR_PIN = 3;
 struct front_sensor_pins_struct {int left; int mid; int right;};
 front_sensor_pins_struct front_sensor_pins  = {0,1,2};
 const int ERROR_LED_PIN = 4;
+//const int GREEN_LED_PIN = 10;
+//const int RED_LED_PIN = 11;
+//const int AMBER_LED_PIN = 12;
 const int SERVO_PIN = 5;
 
 US_pins_struct front_US_pins = {6, 7}; // for HC-SR04

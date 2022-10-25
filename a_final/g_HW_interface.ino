@@ -30,6 +30,9 @@ void set_motor_speed(bool is_right, int speed) {
       state.motor_cmds.shift();
     }
 	}
+  if (speed > 0){
+    digitalWrite(AMBER_LED_PIN,HIGH)
+  }
 }
 
 void set_motor_speeds(int speed) {
