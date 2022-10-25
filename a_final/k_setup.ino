@@ -2,6 +2,7 @@
 
 void setup() {
   set_motor_speeds(0);
+  set_motor_dirs(FORWARD);
   delay(10000);
   Serial.begin(9600);
 
@@ -25,7 +26,7 @@ void setup() {
     while (1);
   }
   Serial.println("Motor Shield found.");
-
+  start_millis = millis();
   // state configuration
   set_sector(5);
   // set_mode(modes.finding_line_at_start);

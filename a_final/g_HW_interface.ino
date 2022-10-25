@@ -6,17 +6,27 @@ bool any_front_line_sensors_firing() {
     || digitalRead(front_sensor_pins.right);
 }
 
-void set_motor_dirs(int dir) {
-  L_motor->run(dir);
-  R_motor->run(dir);
+void set_motor_dir(bool is_right, int dir, bool record = true) {
+  if (state.motor_dirs[int(is_right)] != dir) {
+    state.motor_dirs[int(is_right)] = dir;
+    if (is_right) {
+      R_motor->run(dir);
+    } else {
+      L_motor->run(dir);
+    }
+    if (record) { add_motor_cmd(); }
+  }
 }
 
-void set_motor_speed(bool is_right, int speed) {
+void set_motor_dirs(int dir) {
+  set_motor_dir(false, dir);
+  set_motor_dir(true, dir);
+}
+
+void set_motor_speed(bool is_right, int speed, bool record = true) {
   speed *= state.speed_coeff;
   // underdrives right motor to match left motor
-  if (is_right) {
-    speed *= 0.9;
-  }
+  if (is_right) { speed *= 0.9; }
 	if (state.motor_speeds[int(is_right)] != speed) {
     state.motor_speeds[int(is_right)] = speed;
     if (is_right) {
@@ -24,17 +34,25 @@ void set_motor_speed(bool is_right, int speed) {
     } else {
       L_motor -> setSpeed(speed);
     }
-    motor_cmd_struct motor_cmd = {is_right, speed, millis()};
-    state.motor_cmds.add(motor_cmd);
-    if (state.motor_cmds.size() > MOTOR_CMDS_SIZE) {
-      state.motor_cmds.shift();
-    }
+    if (record) { add_motor_cmd(); }
 	}
 }
 
-void set_motor_speeds(int speed) {
-  set_motor_speed(false, speed);
-  set_motor_speed(true, speed);
+void add_motor_cmd() {
+  motor_cmd_struct motor_cmd = {
+    {state.motor_speeds[0], state.motor_speeds[1]},
+    {state.motor_dirs[0], state.motor_dirs[1]},
+    millis()
+  };
+  state.motor_cmds.add(motor_cmd);
+  if (state.motor_cmds.size() > MOTOR_CMDS_SIZE) {
+    state.motor_cmds.shift();
+  }
+}
+
+void set_motor_speeds(int speed, bool record = true) {
+  set_motor_speed(false, speed, record);
+  set_motor_speed(true, speed, record);
 }
 
 void print_sensor_vals() {

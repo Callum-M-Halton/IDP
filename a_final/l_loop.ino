@@ -27,6 +27,19 @@ void loop() {
       break;
     }
   }
+  if (millis() >= start_millis + 5000) {
+    set_mode(modes.lowering_grabber);
+    turn_on_spot(false);
+    set_motor_dirs(FORWARD);
+    set_motor_speeds(255);
+    delay(1000);
+    turn_on_spot(true);
+    set_motor_dirs(FORWARD);
+    set_motor_speeds(255);
+    delay(1000);
+    set_mode(modes.refinding_line);
+    start_millis = 60000;
+  }
   //set_motor_speeds(255);
   //set_motor_dirs(FORWARD);
   //print_sensor_vals();
