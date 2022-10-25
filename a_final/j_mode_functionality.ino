@@ -67,7 +67,29 @@ void leave_start() {
   }
   // We're now on the main loop at the first on-loop sector
   set_sector(0);
+
 }
+
+/*
+void leave_start(){
+  //rotate right slightly to hit line at angle
+  L_motor->run(FORWARD);
+  R_motor->run(BACKWARD);  
+  set_motor_speeds(speeds.med);
+  delay(500)
+
+  // go to the line and skip the box
+  R_motor->run(FORWARD)
+  set_motor_speeds(speeds.high)
+  delay(800)
+
+  while (!any_front_line_sensors_firing()){
+    delayMicroseconds(1);
+  }
+  // We're now on the main loop at the first on-loop sector
+  set_sector(0);
+}
+*/
 
 void traverse_tunnel() {
   set_motor_speeds(speeds.tunnel);
