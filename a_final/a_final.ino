@@ -3,6 +3,8 @@
 #include <LinkedList.h>
 #include <Servo.h>
 
+unsigned long start_millis;
+
 // Initialise Motors and Servo
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *L_motor = AFMS.getMotor(4);
@@ -26,6 +28,23 @@ int get_ultrasonic_distance(US_pins_struct US_pins) {
   // Displays the distance on the Serial Monitor
   Serial.println("Distance in cm: " + String(distance));
   return distance;
+}
+
+void turn_on_spot(bool to_the_right) {
+    if (to_the_right){
+        // set direction to turn right
+        L_motor->run(FORWARD);
+        R_motor->run(BACKWARD);
+    } else {
+        // set direction to turn left
+        L_motor->run(BACKWARD);
+        R_motor->run(FORWARD);
+    }
+    
+    int turn_period = 500; // need to calibrate
+    set_motor_speed(true, 255); //right motor
+    set_motor_speed(false, 255); //left motor
+    delay(turn_period); // not gonna be doing anything apart form turning if turning on spot anyway
 }
 
 // ====================== JUNK ======================
@@ -59,20 +78,5 @@ on_loop_sector_codes_struct OL_SCs = {0,1,2,3,4,5,6,7,8,9,10,11,12,13}; */
 /*
 unsigned long time_now = 0;
 // to turn 90 degrees in one way for either leaving box or when object is located
-void turn_on_spot(to_the_right) {
-    if (to_the_right){
-        // set direction to turn right
-        L_motor->run(FORWARD);
-        R_motor->run(BACKWARD);
-    } else {
-	      // set direction to turn left
-        L_motor->run(BACKWARD);
-        R_motor->run(FORWARD);
-    }
-    
-    int turn_period = 50 // need to calibrate
-    set_motor_speed(true, speeds.high); //right motor
-    set_motor_speed(false, speeds.high); //left motor
-    delay(turn_period) // not gonna be doing anything apart form turning if turning on spot anyway
-}
+
 */

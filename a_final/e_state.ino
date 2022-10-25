@@ -11,7 +11,9 @@ constexpr offset_exts_struct offset_exts = {0,1,2,3};
 // ++++++++++++++++++++
 
 struct motor_cmd_struct {
-  bool is_right; int speed; unsigned long time_stamp;
+  int dirs[2];
+  int speeds[2];
+  unsigned long time_stamp;
 };
 
 struct state_struct {
@@ -25,6 +27,7 @@ struct state_struct {
   LinkedList<int> disparities_sample; int sector_code;
   //
   float speed_coeff; int blocks_collected;
+  int motor_dirs[2];
 };
 state_struct state = {
   /*{},*/
@@ -36,5 +39,6 @@ state_struct state = {
   LinkedList<motor_cmd_struct>(), 0,
   LinkedList<int>(), -1,
   //
-  1.0, 1 /////////// 1 for testing, 0 in production!!!!!
+  1.0, 1, /////////// 1 for testing, 0 in production!!!!!
+  {FORWARD, FORWARD}
 };
