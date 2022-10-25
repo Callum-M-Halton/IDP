@@ -2,7 +2,7 @@
 
 struct approachables_struct {
   const int tunnel; const int straight; int nothing;
-  const int junct_on_right; const int corner; const int box;
+  const int junct_on_right; const int corner; const int box; const int block;
 };
 constexpr approachables_struct approachables = {0,1,2,3,4,5};
 
@@ -19,7 +19,7 @@ sector_struct sectors[num_of_sectors] = {
   /* 3  */ {"ramp_straight", approachables.corner},
 
   /* 4  */ {"corner_after_ramp", approachables.straight},
-  /* 5  */ {"block_straight", approachables.corner},
+  /* 5  */ {"block_straight", approachables.block},
   /* 6  */ {"corner_before_tunnel", approachables.straight},
   /* 7  */ {"section_before_tunnel", approachables.tunnel},
 

@@ -61,6 +61,33 @@ void set_motor_speeds(int speed, bool record = true) {
   set_motor_speed(true, speed, record);
 }
 
+
+
+bool test_if_magnetic() {
+  Serial.println("Testing block with hall sensor");
+  int tot = 0;
+  for(int i = 0; i < HALL_EFFECT_SAMPLE_LENGTH; i++) {
+      tot += analogRead(HALL_SENSOR_PIN);
+  } 
+  int avg = tot / HALL_EFFECT_SAMPLE_LENGTH;
+  
+  if(avg > HALL_SENSOR_THRESHOLD) {
+    //turn on red light for 5 sec if magnetic
+    digitalWrite(RED_LED_PIN, HIGH);
+    delay(5000);
+    digitalWrite(RED_LED_PIN, LOW);
+    // box is magnetic
+    return true;
+  } else {
+    //turn on green light for 5 sec if not magnetic
+    digitalWrite(GREEN_LED_PIN, LOW);
+    delay(5000);
+    digitalWrite(GREEN_LED_PIN, LOW);
+    //box is not magnetic
+    return false;
+  }
+}
+
 void print_sensor_vals() {
   Serial.print(digitalRead(front_sensor_pins.left));
   Serial.print(digitalRead(front_sensor_pins.mid));

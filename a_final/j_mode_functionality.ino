@@ -185,3 +185,17 @@ void deposit_block() {
   state.approaching = approachables.junct_on_right;
   state.sector_code_to_turn_off_after = -1;
 }
+
+void aquire_block() {
+  set_motor_speeds(0);
+  if (test_if_magnetic()) {
+    // 11 => "straight_before_green_junct"
+    state.sector_code_to_turn_off_after = 11;
+  } else {
+    // 0 => "straight_after_start_junct" i.e. straight before red junct
+    state.sector_code_to_turn_off_after = 0;
+  }
+  lower_grabber();
+  state.speed_coeff = 1.0;
+  state.approaching = approachables.corner;
+}

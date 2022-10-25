@@ -22,9 +22,12 @@ void setup() {
   pinMode(front_sensor_pins.mid, INPUT);
   pinMode(front_sensor_pins.right, INPUT);
   
-  // Setting LEDs for errors
+  // Setting LEDs
   pinMode(ERROR_LED_PIN, OUTPUT);
   pinMode(AMBER_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(HALL_SENSOR_PIN, INPUT);
 
   if (false) {
     turn_on_spot(false);
