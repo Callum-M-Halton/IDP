@@ -17,7 +17,7 @@ void follow_line_step() {
             traverse_tunnel();
           // === Otherwisee assume approaching box ===
           // If the sector_code was straight_before_start_junct then we're going home
-          } else if (state.sector_code == 12){
+          } else if (state.sector_code == 12) {
             go_home();
           // Otherwise we're depositing a block
           } else {
@@ -48,8 +48,8 @@ void refind_line() {
   set_motor_dirs(BACKWARD);
   reverse_run(false);
 
-  // perturb right if sector is tunnel otherwise perturb left
-  bool perturb_right = state.sector_code == 8; // tunnel sector code
+  // perturb right if sector is ramp_straight otherwise perturb left
+  bool perturb_right = state.sector_code == 3; // ramp straight code
   int dirs[2] = {FORWARD, BACKWARD};
   set_motor_dir(false, dirs[int(!perturb_right)], false);
   set_motor_dir(true, dirs[int(perturb_right)], false);
@@ -123,6 +123,9 @@ void reverse_run(bool ignore_sensors) {
   while (ignore_sensors || !any_front_line_sensors_firing()) {
     if (millis() >= state.timer_end) {
       motor_cmd_struct last_cmd = state.motor_cmds.pop();
+      if (state.motor_cmds.size() < 1) {
+        Serial.println("MOTOR CMDS JSUT RAN OUT");
+      }
       if (last_cmd.is_flag) { break; }
 
       set_motor_dir(false, last_cmd.dirs[0], false);
@@ -188,13 +191,13 @@ void deposit_block() {
 
 void aquire_block() {
   set_motor_speeds(0);
-  if (test_if_magnetic()) {
+  //if (test_if_magnetic()) {
     // 11 => "straight_before_green_junct"
     state.sector_code_to_turn_off_after = 11;
-  } else {
+  //} else {
     // 0 => "straight_after_start_junct" i.e. straight before red junct
-    state.sector_code_to_turn_off_after = 0;
-  }
+  //  state.sector_code_to_turn_off_after = 0;
+  //}
   lower_grabber();
   state.speed_coeff = 1.0;
   state.approaching = approachables.corner;

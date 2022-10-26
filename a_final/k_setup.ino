@@ -29,7 +29,7 @@ void setup() {
   pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(HALL_SENSOR_PIN, INPUT);
 
-  if (false) {
+  if (true) {
     turn_on_spot(false);
     delay(500);
     set_motor_dirs(FORWARD);
@@ -41,6 +41,6 @@ void setup() {
     set_motor_speeds(255);
     delay(1000);
   }
-
-  leave_start();
+  refind_line();
+  //leave_start();
 }
