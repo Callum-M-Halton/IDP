@@ -46,6 +46,6 @@ void setup() {
     delay(1000);
   }
   //refind_line();
-  state.approaching = approachables.junct_on_right;
+  state.approaching = approachables.corner;
   //leave_start();
 }

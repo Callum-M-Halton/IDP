@@ -3,10 +3,14 @@
 void loop() {
   //Serial.println("main loop");
   if (true) {
+    state.cycle_num += 1;
     // Sensor checking based on what we're approaching
-    if (state.approaching == approachables.corner 
-        || state.approaching == approachables.straight) {
+    if (
+      (state.approaching == approachables.corner || state.approaching == approachables.straight)
+      && (state.cycle_num % DISPARITY_SAMPLE_PERIOD == 0)
+    ) {
       update_turns_disparity_and_sector(
+        
         state.approaching == approachables.corner
       );
     } else if (state.approaching == approachables.junct_on_right) {

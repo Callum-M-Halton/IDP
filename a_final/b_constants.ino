@@ -14,7 +14,8 @@ front_sensor_pins_struct front_sensor_pins  = {0,1,2};
 // other
 const int MOTOR_CMDS_SIZE = 100;
 const int TURN_DISPARITIES_SAMPLE_LENGTH = 100; //TUNE
-const int CURVING_LEFT_THRESHOLD = 125; //TUNE
+const int DISPARITY_SAMPLE_PERIOD = 20;
+const int CURVING_LEFT_THRESHOLD = 0; //TUNE
 const int GOING_STRAIGHT_THRESHOLD = 75; //TUNE
 const int TIME_TO_DRIVE_FORWARD_FOR_AT_START = 2800; //TUNE
 const int TIME_TO_DRIVE_FORWARD_TO_GO_HOME = 1000; //TUNE
@@ -29,5 +30,5 @@ const int RAISE_GRABBER_VALUE = 70; //TUNE
 struct speeds_struct {int tiny; int low; int med; int high; int tunnel;};
 speeds_struct speeds = {0, 50, 150, 255};
 struct stblil_struct {int none; int as_before; int high; int med; int low; };
-stblil_struct suggested_timers_by_line_end_likelihoods = { -2, -1, 600, -7, -7 };
+stblil_struct suggested_timers_by_line_end_likelihoods = { -2, -1, 1000, -7, -7 };
 // -7 as irrelevant for current implementation

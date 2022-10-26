@@ -20,7 +20,6 @@ void follow_line_step() {
     } else if (suggested_timer == suggested_timers_by_line_end_likelihoods.as_before) {
       // if the timer is valid (not set to the null state of 0)...
       // ... and it has run out, assume buggy off line
-      Serial.println(state.timer_end - millis());
       if (state.timer_end != 0 && millis() >= state.timer_end) {
         refind_line();
       }
@@ -38,7 +37,6 @@ void follow_line_step() {
 }
 
 void print_motor_cmds() {
-  Serial.println("aaaa");
   for (int i = 0; i < state.motor_cmds.size(); i++) {
     motor_cmd_struct cmd = state.motor_cmds.get(i);
     Serial.println("=========================");
@@ -50,7 +48,7 @@ void print_motor_cmds() {
 }
 
 void refind_line() {
-  print_motor_cmds();
+  //print_motor_cmds();
   Serial.println("Task: Refinding Line");
   while(1);
   digitalWrite(ERROR_LED_PIN, HIGH);
@@ -123,7 +121,6 @@ void reverse_run(bool ignore_sensors) {
       }
       motor_cmd_struct last_cmd = state.motor_cmds.pop();
       if (last_cmd.is_flag) { break; }
-      //Serial.println(String(millis() - start_time));
       set_motor_dir(false, 3 - last_cmd.dirs[0], false);
       set_motor_dir(true, 3 - last_cmd.dirs[1], false);
       set_motor_speed(false, last_cmd.speeds[0], false);

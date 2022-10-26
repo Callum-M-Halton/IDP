@@ -27,7 +27,7 @@ struct state_struct {
   //
   int blocks_collected; int motor_dirs[2];
   int sector_code_to_turn_off_after; float speed_coeff;
-  int junct_sensor_val;
+  int junct_sensor_val; unsigned long cycle_num;
 };
 state_struct state = {
   {-1, -1}, offset_dirs.none,
@@ -39,5 +39,5 @@ state_struct state = {
   //
   0, {-1, -1},
   -1, 1.0,
-  0
+  0, 0
 };

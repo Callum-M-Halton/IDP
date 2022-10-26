@@ -5,6 +5,7 @@ void update_turns_disparity_and_sector(bool approaching_corner) {
   int newest_disparity = state.motor_speeds[1] - state.motor_speeds[0];
 	state.disparities_sample.add(newest_disparity);
 	// Only possible when SAMPLE_LENGTH first reached so avg must be computed from scratch
+  Serial.println(state.avg_turns_disparity);
 	if (state.disparities_sample.size() == TURN_DISPARITIES_SAMPLE_LENGTH) {
     int tot = 0;
     for (int i = 0; i < state.disparities_sample.size(); i++) {
@@ -18,7 +19,12 @@ void update_turns_disparity_and_sector(bool approaching_corner) {
 		state.avg_turns_disparity -= oldest_disparity / TURN_DISPARITIES_SAMPLE_LENGTH;
 		// Add contribution of newest turns disparity
 		state.avg_turns_disparity += newest_disparity / TURN_DISPARITIES_SAMPLE_LENGTH;
-
+/*
+    for (int i = 0; i < state.disparities_sample.size(); i++) {
+      Serial.println(String(state.disparities_sample.get(i)));
+    }*/
+    
+   
     // If turns_disparity high enough,
     // right wheel overdriven enough to be curving left
     if (
@@ -29,7 +35,9 @@ void update_turns_disparity_and_sector(bool approaching_corner) {
         (state.avg_turns_disparity < GOING_STRAIGHT_THRESHOLD
         && !approaching_corner)
     ) {
-      next_sector();
+      set_motor_speeds(0);
+      while(1);
+      //next_sector();
     }
   }
 }
