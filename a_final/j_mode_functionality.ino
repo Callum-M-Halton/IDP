@@ -5,6 +5,7 @@ void follow_line_step() {
   bool approaching_EOL = ( state.approaching == approachables.tunnel
     || state.approaching == approachables.home_box
     || state.approaching == approachables.deposit_box
+    || state.approaching == approachables.ramp
   );
   if (suggested_timer != suggested_timers_by_line_end_likelihoods.none) {
     if (approaching_EOL) {
@@ -134,10 +135,10 @@ void aquire_block() {
 
 void leave_start(){
   Serial.println("Task: Leaving Start Box");
-  state.super_timer_end = millis() + 9300;
-  state.approaching = approachables.straight_before_tunnel;
+  state.super_timer_end = millis() + 9300; // TUNE
+  state.approaching = approachables.straight_before_ramp;
   //rotate right slightly to hit line at angle
-  turn_on_spot(false);
+  turn_on_spot(true);
   delay(500);
 
   // go to the line and skip the box
