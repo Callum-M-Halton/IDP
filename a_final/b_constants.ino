@@ -6,10 +6,10 @@ const byte ERROR_LED_PIN = 4;
 const byte GREEN_LED_PIN = 10;
 const byte RED_LED_PIN = 11;
 const byte AMBER_LED_PIN = 12;
-const byte SERVO_PIN = 5;
+const byte SERVO_PIN = 5; //has to go in 9 or 10 (servo specific pins)
 const int HALL_SENSOR_PIN = A1;
 struct front_sensor_pins_struct {int left; int mid; int right;};
-front_sensor_pins_struct front_sensor_pins  = {0,1,2};
+front_sensor_pins_struct front_sensor_pins  = {5,6,7};
 
 // other
 const int MOTOR_CMDS_SIZE = 100;
