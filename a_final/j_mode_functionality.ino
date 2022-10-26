@@ -187,6 +187,7 @@ void deposit_block() {
 }
 
 void aquire_block() {
+  Serial.println("Task: Acquiring Block");
   set_motor_speeds(0);
   if (test_if_magnetic()) {
     // 11 => "straight_before_green_junct"
