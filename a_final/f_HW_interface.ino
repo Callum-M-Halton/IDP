@@ -6,6 +6,7 @@ bool any_front_line_sensors_firing() {
     || digitalRead(front_sensor_pins.right);
 }
 
+/*
 void add_motor_cmd(bool is_flag = false) {
   motor_cmd_struct motor_cmd = {
     {state.motor_dirs[0], state.motor_dirs[1]},
@@ -18,8 +19,9 @@ void add_motor_cmd(bool is_flag = false) {
     state.motor_cmds.shift();
   }
 }
+*/
 
-void set_motor_dir(bool is_right, int dir, bool record = true) {
+void set_motor_dir(bool is_right, int dir) {
   if (state.motor_dirs[int(is_right)] != dir) {
     state.motor_dirs[int(is_right)] = dir;
     if (is_right) {
@@ -27,7 +29,6 @@ void set_motor_dir(bool is_right, int dir, bool record = true) {
     } else {
       L_motor->run(dir);
     }
-    if (record) { add_motor_cmd(); }
   }
 }
 
@@ -49,22 +50,21 @@ void set_motor_speed(bool is_right, int speed, bool record = true) {
     } else {
       L_motor -> setSpeed(speed);
     }
-    if (record) { add_motor_cmd(); }
 	}
-  if (state.motor_speeds[0] == 0 && state.motor_speeds[1] == 0){
-    digitalWrite(AMBER_LED_PIN, LOW);
+  if (state.motor_speeds[0] == 0 && state.motor_speeds[1] == 0) {
+    digitalWrite(AMBER_LED_PIN, HIGH);
   } else {
+    // figure out flashing in hardware?
     digitalWrite(AMBER_LED_PIN, HIGH);
   }
 }
 
-void set_motor_speeds(int speed, bool record = true) {
-  set_motor_speed(false, speed, record);
-  set_motor_speed(true, speed, record);
+void set_motor_speeds(int speed) {
+  set_motor_speed(false, speed);
+  set_motor_speed(true, speed);
 }
 
-
-
+/*
 bool test_if_magnetic() {
   Serial.println("Testing block with hall sensor");
   int tot = 0;
@@ -89,6 +89,7 @@ bool test_if_magnetic() {
     return false;
   }
 }
+*/
 
 void print_sensor_vals() {
   Serial.print(digitalRead(front_sensor_pins.left));
@@ -104,7 +105,6 @@ void raise_grabber() {
     myservo.write(RAISE_GRABBER_VALUE);
 }
 
-
 void turn_on_spot(bool to_right) {
     if (to_right){
         // set direction to turn right
@@ -119,3 +119,10 @@ void turn_on_spot(bool to_right) {
     set_motor_speed(true, 255); //right motor
     set_motor_speed(false, 255); //left motor
 }
+
+/* ============= bits ==============
+
+, bool record = true
+if (record) { add_motor_cmd(); } x 2
+
+*/

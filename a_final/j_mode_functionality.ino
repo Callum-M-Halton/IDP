@@ -2,16 +2,17 @@
 
 void follow_line_step() {
   int suggested_timer = correct_trajectory();
-  bool approaching_EOL = false;
-    //(state.approaching == approachables.tunnel || state.approaching == approachables.box);
+  bool approaching_EOL = ( state.approaching == approachables.tunnel
+    || state.approaching == approachables.home_box
+    || state.approaching == approachables.deposit_box
+  );
   if (suggested_timer != suggested_timers_by_line_end_likelihoods.none) {
     if (approaching_EOL) {
-      if (true/*state.approaching == approachables.tunnel*/) {
-        //next_sector();
+      if (state.approaching == approachables.tunnel) {
         traverse_tunnel();
       // === Otherwise assume approaching box ===
       // If the sector_code was straight_before_start_junct then we're going home
-      } else if (state.sector_code == 12) {
+      } else if (state.approaching == approachables.home_box) {
         go_home();
       // Otherwise we're depositing a block
       } else {
@@ -36,48 +37,149 @@ void follow_line_step() {
   }
 }
 
-void print_motor_cmds() {
-  for (int i = 0; i < state.motor_cmds.size(); i++) {
-    motor_cmd_struct cmd = state.motor_cmds.get(i);
-    Serial.println("=========================");
-    Serial.println(String(cmd.dirs[0]) + " " + String(cmd.dirs[1]));
-    Serial.println(String(cmd.speeds[0]) + " " + String(cmd.speeds[1]));
-    Serial.println(String(cmd.time_stamp) + " " + String(cmd.is_flag));
-    Serial.println("=========================");
+void refind_line() {
+  Serial.println("Task: Refinding Line");
+  unsigned long timer_end;
+  bool seq[4] = {true, false, false, true};
+  for (int t = 50; t < 1000; t += 50) {
+    for (int s = 0; s < 5; s++) {
+      timer_end = millis() + t;
+      turn_on_spot(seq[s]);
+      while(millis() < timer_end && !any_front_line_sensors_firing()) {
+        delayMicroseconds(1);
+      }
+      if (!any_front_line_sensors_firing()) { return; }
+    }
   }
 }
 
-void refind_line() {
-  //print_motor_cmds();
-  Serial.println("Task: Refinding Line");
-  while(1);
-  digitalWrite(ERROR_LED_PIN, HIGH);
-  
-  reverse_run(false);
-  set_motor_dirs(BACKWARD);
+void traverse_tunnel() {
+  Serial.println("Task: Traversing Tunnel");
   set_motor_speeds(255);
-  while(!any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
-  }
-/*
-  // perturb right if sector is ramp_straight otherwise perturb left
-  bool perturb_right = state.sector_code == 3; // ramp straight code
-  int dirs[2] = {FORWARD, BACKWARD};
-  set_motor_dir(false, dirs[int(!perturb_right)], false);
-  set_motor_dir(true, dirs[int(perturb_right)], false);
-  set_motor_speeds(255, false);
-  while (any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
-  }
-  set_motor_dir(false, dirs[int(perturb_right)], false);
-  set_motor_dir(true, dirs[int(!perturb_right)], false);
+  delay(3500);
+  turn_on_spot(true);
   while (!any_front_line_sensors_firing()) {
     delayMicroseconds(1);
   }
-  set_motor_speeds(0, false);
-  digitalWrite(ERROR_LED_PIN, LOW);
- */
+  if (state.has_block) {
+    state.approaching = approachables.straight_before_juncts;
+    state.super_timer_end = millis() + 5000; // TUUUUUUNE
+  } else {
+    state.approaching = approachables.straight_before_block;
+    state.super_timer_end = millis() + 5000; // TUUUUUUNE
+  }
 }
+
+void make_right_turn() {
+  Serial.println("Task: Making Right Turn");
+
+  turn_on_spot(true);
+  delay(200);
+  while (!any_front_line_sensors_firing()) {
+    delayMicroseconds(1);
+  }
+  if (state.approaching == approachables.deposit_junct) {
+    state.approaching = approachables.deposit_box;
+  } else {
+    state.approaching = approachables.home_box;
+  }
+}
+
+void go_home() {
+  Serial.println("Task: Going Home");
+  set_motor_dirs(FORWARD);
+  set_motor_speeds(255);
+  delay(1000);
+  set_motor_speeds(0);
+  while (1);
+}
+
+void deposit_block() {
+  Serial.println("Task: Depositing Block");
+  // drop off block
+  set_motor_dirs(FORWARD);
+  set_motor_speeds(255);
+  delay(500);
+  raise_grabber();
+  set_motor_dirs(BACKWARD);
+  set_motor_speeds(255);
+  delay(500);
+  // escape box
+  turn_on_spot(false);
+  delay(1500);
+  set_motor_dirs(FORWARD);
+  set_motor_speeds(255);
+  delay(1200);
+  // rejoin line
+  while (!any_front_line_sensors_firing()){
+    delayMicroseconds(1);
+  }
+  state.approaching = approachables.home_junct;
+}
+
+void aquire_block() {
+  Serial.println("Task: Acquiring Block");
+  set_motor_speeds(0);
+  lower_grabber();
+  state.has_block = true;
+  state.speed_coeff = 1.0;
+  turn_on_spot(true);
+  delay(200);
+  while (!any_front_line_sensors_firing()){
+    delayMicroseconds(1);
+  }
+  state.approaching = approachables.straight_before_tunnel;
+  state.super_timer_end = millis() + 7000;
+}
+
+void leave_start(){
+  Serial.println("Task: Leaving Start Box");
+  state.super_timer_end = millis() + 9300;
+  state.approaching = approachables.straight_before_tunnel;
+  //rotate right slightly to hit line at angle
+  turn_on_spot(false);
+  delay(500);
+
+  // go to the line and skip the box
+  set_motor_dirs(FORWARD);
+  delay(1200);
+
+  while (!any_front_line_sensors_firing()){
+    delayMicroseconds(1);
+  }
+}
+
+
+/*
+//unsigned long start_time;
+void reverse_run(bool ignore_sensors) {
+  state.time_stamp_of_cmd_being_rev_run = millis();
+  state.timer_end = millis();
+  //start_time = millis();
+  while (ignore_sensors || !any_front_line_sensors_firing()) {
+    Serial.println("rev");
+    if (millis() >= state.timer_end) {
+      if (state.motor_cmds.size() < 1) {
+        return;
+      }
+      motor_cmd_struct last_cmd = state.motor_cmds.pop();
+      if (last_cmd.is_flag) { break; }
+      set_motor_dir(false, 3 - last_cmd.dirs[0], false);
+      set_motor_dir(true, 3 - last_cmd.dirs[1], false);
+      set_motor_speed(false, last_cmd.speeds[0], false);
+      set_motor_speed(true, last_cmd.speeds[1], false);
+
+      unsigned long timer_length = state.time_stamp_of_cmd_being_rev_run - last_cmd.time_stamp;
+      state.timer_end = millis() + timer_length;
+      state.time_stamp_of_cmd_being_rev_run = last_cmd.time_stamp;
+    } else {
+      delay(1);
+    }
+  }
+  set_motor_speeds(0);
+}
+*/
+
 /*
 void leave_start() {
   Serial.println("Task: Leaving Start");
@@ -108,73 +210,51 @@ void leave_start() {
   set_sector(0);
 }*/
 
-//unsigned long start_time;
-void reverse_run(bool ignore_sensors) {
-  state.time_stamp_of_cmd_being_rev_run = millis();
-  state.timer_end = millis();
-  //start_time = millis();
-  while (ignore_sensors || !any_front_line_sensors_firing()) {
-    Serial.println("rev");
-    if (millis() >= state.timer_end) {
-      if (state.motor_cmds.size() < 1) {
-        return;
-      }
-      motor_cmd_struct last_cmd = state.motor_cmds.pop();
-      if (last_cmd.is_flag) { break; }
-      set_motor_dir(false, 3 - last_cmd.dirs[0], false);
-      set_motor_dir(true, 3 - last_cmd.dirs[1], false);
-      set_motor_speed(false, last_cmd.speeds[0], false);
-      set_motor_speed(true, last_cmd.speeds[1], false);
-
-      unsigned long timer_length = state.time_stamp_of_cmd_being_rev_run - last_cmd.time_stamp;
-      state.timer_end = millis() + timer_length;
-      state.time_stamp_of_cmd_being_rev_run = last_cmd.time_stamp;
-    } else {
-      delay(1);
-    }
+/*void refind_line() {
+  //print_motor_cmds();
+  Serial.println("Task: Refinding Line");
+  set_motor_dirs(FORWARD);
+  set_motor_speed(false, 255);
+  set_motor_speed(true, 150);
+  while(!any_front_line_sensors_firing()) {
+    delayMicroseconds(1);
   }
-  set_motor_speeds(0);
-}
 
-void traverse_tunnel() {
-  Serial.println("Task: Traversing Tunnel");
-  set_motor_speeds(255);
-  delay(3500);
-  turn_on_spot(true);
+  // perturb right if sector is ramp_straight otherwise perturb left
+  bool perturb_right = state.sector_code == 3; // ramp straight code
+  int dirs[2] = {FORWARD, BACKWARD};
+  set_motor_dir(false, dirs[int(!perturb_right)], false);
+  set_motor_dir(true, dirs[int(perturb_right)], false);
+  set_motor_speeds(255, false);
+  while (any_front_line_sensors_firing()) {
+    delayMicroseconds(1);
+  }
+  set_motor_dir(false, dirs[int(perturb_right)], false);
+  set_motor_dir(true, dirs[int(!perturb_right)], false);
   while (!any_front_line_sensors_firing()) {
     delayMicroseconds(1);
   }
-  //next_sector();
-}
+  set_motor_speeds(0, false);
+  digitalWrite(ERROR_LED_PIN, LOW);
+}*/
 
-void make_right_turn() {
-  Serial.println("Task: Making Right Turn");
+/*
+void print_motor_cmds() {
+  for (int i = 0; i < state.motor_cmds.size(); i++) {
+    motor_cmd_struct cmd = state.motor_cmds.get(i);
+    Serial.println("=========================");
+    Serial.println(String(cmd.dirs[0]) + " " + String(cmd.dirs[1]));
+    Serial.println(String(cmd.speeds[0]) + " " + String(cmd.speeds[1]));
+    Serial.println(String(cmd.time_stamp) + " " + String(cmd.is_flag));
+    Serial.println("=========================");
+  }
+}
+*/
+
+/* ======= bits ======
   // adds a flag to the motor cmds history so we can reverse up until this point later
-  add_motor_cmd(true /* true indicates to add a flag command*/);
-  turn_on_spot(true);
-  delay(200);
-  while (!any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
-  }
-  set_motor_speeds(0);
-  state.approaching = approachables.box;
-}
+  add_motor_cmd(true // true indicates to add a flag command);
 
-void go_home() {
-  Serial.println("Task: Going Home");
-  set_motor_dirs(FORWARD);
-  set_motor_speeds(255);
-  delay(TIME_TO_DRIVE_FORWARD_TO_GO_HOME);
-  set_motor_speeds(0);
-  while (1);
-}
-
-void deposit_block() {
-  Serial.println("Task: Depositing Block");
-  set_motor_dirs(FORWARD);
-  set_motor_speeds(255);
-  delay(TIME_TO_DRIVE_FORWARD_TO_DROP_BLOCK);
-  raise_grabber();
   reverse_run(true);
   set_motor_dirs(BACKWARD);
   set_motor_speeds(255);
@@ -182,38 +262,12 @@ void deposit_block() {
   set_motor_speeds(0);
   state.approaching = approachables.junct_on_right;
   state.sector_code_to_turn_off_after = -1;
-}
 
-void aquire_block() {
-  Serial.println("Task: Acquiring Block");
-  set_motor_speeds(0);
-  //if (test_if_magnetic()) {
+  if (test_if_magnetic()) {
     // 11 => "straight_before_green_junct"
     state.sector_code_to_turn_off_after = 11;
-  //} else {
+  } else {
     // 0 => "straight_after_start_junct" i.e. straight before red junct
-  //  state.sector_code_to_turn_off_after = 0;
-  //}
-  lower_grabber();
-  state.speed_coeff = 1.0;
-  state.approaching = approachables.corner;
-}
-
-
-void leave_start(){
-  //rotate right slightly to hit line at angle
-  set_motor_dir(false, FORWARD);
-  set_motor_dir(true, BACKWARD);  
-  set_motor_speeds(255);
-  delay(500);
-
-  // go to the line and skip the box
-  set_motor_dir(true, FORWARD);
-  delay(1200);
-
-  while (!any_front_line_sensors_firing()){
-    delayMicroseconds(1);
+    state.sector_code_to_turn_off_after = 0;
   }
-  // We're now on the main loop at the first on-loop sector
-  set_sector(0);
-}
+*/

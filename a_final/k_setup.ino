@@ -13,27 +13,27 @@ void setup() {
   // attach Servo and configure ultrasonic pins
   myservo.attach(SERVO_PIN);
   // Set trig pins as outputs and echo pins as inputs
-  pinMode(front_US_pins.trig, OUTPUT);  pinMode(side_US_pins.trig, OUTPUT);
-  pinMode(front_US_pins.echo, INPUT);  pinMode(side_US_pins.echo, INPUT);
+  pinMode(front_US_pins.trig, OUTPUT);  // pinMode(side_US_pins.trig, OUTPUT);
+  pinMode(front_US_pins.echo, INPUT); // pinMode(side_US_pins.echo, INPUT);
 
   // Setting the IR sensor pins as inputs
   pinMode(front_sensor_pins.left, INPUT);
   pinMode(front_sensor_pins.mid, INPUT);
   pinMode(front_sensor_pins.right, INPUT);
+  pinMode(JUNCT_SENSOR_PIN, INPUT);
   
   // Setting LEDs
-  pinMode(ERROR_LED_PIN, OUTPUT);
   pinMode(AMBER_LED_PIN, OUTPUT);
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
-  pinMode(HALL_SENSOR_PIN, INPUT);
-
+ 
   // hardware config
   set_motor_speeds(0); /////////
   raise_grabber();
   delay(10000);
 
-  if (false) {
+  leave_start();
+}
+
+  /*if (false) {
     turn_on_spot(false);
     delay(500);
     set_motor_dirs(FORWARD);
@@ -44,8 +44,11 @@ void setup() {
     set_motor_dirs(FORWARD);
     set_motor_speeds(255);
     delay(1000);
-  }
-  //refind_line();
-  state.approaching = approachables.corner;
-  //leave_start();
-}
+  }*/
+
+/*
+pinMode(RED_LED_PIN, OUTPUT);
+pinMode(GREEN_LED_PIN, OUTPUT);
+pinMode(HALL_SENSOR_PIN, INPUT);
+pinMode(ERROR_LED_PIN, OUTPUT);
+*/

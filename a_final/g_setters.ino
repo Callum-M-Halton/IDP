@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+/*
 void set_sector(int sector_code) {
   state.sector_code = sector_code;
   sector_struct sector = sectors[sector_code];
@@ -14,3 +14,4 @@ void set_sector(int sector_code) {
 void next_sector() {
   set_sector((state.sector_code + 1) % num_of_sectors);
 }
+*/
