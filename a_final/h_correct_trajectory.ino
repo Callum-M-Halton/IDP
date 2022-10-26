@@ -2,7 +2,6 @@
 
 int correct_trajectory() {
   set_motor_dirs(FORWARD);
-  set_motor_speeds(speeds.high);
   int sensors[3] = {digitalRead(front_sensor_pins.left),
     digitalRead(front_sensor_pins.mid), digitalRead(front_sensor_pins.right)};
   int suggested_timer = suggested_timers_by_line_end_likelihoods.none;
@@ -42,7 +41,7 @@ int correct_trajectory() {
         set_motor_speed(false, speeds.high);
       } else {
         // case [0, 1, 0]
-        state.offset_dir = offset_dirs.none;
+        //state.offset_dir = offset_dirs.none; +++important+++
         state.offset_ext = offset_exts.none;
 		    set_motor_speed(false, speeds.high);
         set_motor_speed(true, speeds.high);

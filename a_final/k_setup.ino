@@ -9,7 +9,6 @@ void setup() {
   }
   Serial.println("Motor Shield found.");
   // Make sure we don't start moving prematurely
-  set_motor_speeds(0);
 
   // attach Servo and configure ultrasonic pins
   myservo.attach(SERVO_PIN);
@@ -29,7 +28,12 @@ void setup() {
   pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(HALL_SENSOR_PIN, INPUT);
 
-  if (true) {
+  // hardware config
+  set_motor_speeds(0); /////////
+  raise_grabber();
+  delay(10000);
+
+  if (false) {
     turn_on_spot(false);
     delay(500);
     set_motor_dirs(FORWARD);
@@ -41,6 +45,7 @@ void setup() {
     set_motor_speeds(255);
     delay(1000);
   }
-  refind_line();
+  //refind_line();
+  state.approaching = approachables.junct_on_right;
   //leave_start();
 }

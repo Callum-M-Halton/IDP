@@ -1,7 +1,8 @@
 #include <Arduino.h>
 
 void loop() {
-  if (false) {
+  //Serial.println("main loop");
+  if (true) {
     // Sensor checking based on what we're approaching
     if (state.approaching == approachables.corner 
         || state.approaching == approachables.straight) {
@@ -12,11 +13,14 @@ void loop() {
       int junct_sensor_val = digitalRead(JUNCT_SENSOR_PIN);
       // if falling edge of junct sensor
       if (state.junct_sensor_val && !junct_sensor_val) {
+        Serial.println("Aaaaaaaaa");
+        /*
         if (state.sector_code == state.sector_code_to_turn_off_after) {
           make_right_turn();
         } else {
           next_sector();
         }
+        */
       }
       state.junct_sensor_val = junct_sensor_val;
     } else if (state.approaching == approachables.block) {

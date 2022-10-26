@@ -33,7 +33,7 @@ void setup() {
   motor1->setSpeed(255);
   motor1->run(FORWARD);
   // turn on motor
-  //motor1->run(RELEASE);
+  motor1->run(RELEASE);
 
   // Set the speed to start, from 0 (off) to 255 (max speed)
   motor2->setSpeed(255);

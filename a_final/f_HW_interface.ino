@@ -39,7 +39,9 @@ void set_motor_dirs(int dir) {
 void set_motor_speed(bool is_right, int speed, bool record = true) {
   speed *= state.speed_coeff;
   // underdrives right motor to match left motor
-  if (is_right) { speed *= 0.9; }
+  if (state.motor_dirs[0] == BACKWARD && state.motor_dirs[1] == BACKWARD) {
+    if (is_right) { speed *= 0.95; }
+  } else if (is_right) { speed *= 0.9; }
 	if (state.motor_speeds[int(is_right)] != speed) {
     state.motor_speeds[int(is_right)] = speed;
     if (is_right) {
