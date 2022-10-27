@@ -148,7 +148,7 @@ void leave_start() {
 void traverse_ramp() {
   set_motor_speed(false, 255);
   set_motor_speed(true, 150);
-  delay(2000)
+  delay(2000);
   //
   lower_grabber();
   raise_grabber();
