@@ -6,13 +6,12 @@ void loop() {
     if (state.approaching == approachables.straight_before_tunnel) {
       state.approaching = approachables.tunnel;
     } else if (state.approaching == approachables.straight_before_block) {
-      //
-      lower_grabber();
       state.approaching = approachables.block;
     } else if (state.approaching == approachables.straight_before_juncts) {
       state.approaching = approachables.deposit_junct;
     }
-  } else if (state.approaching == approachables.deposit_junct || state.approaching == approachables.home_junct) {
+  }
+  if (state.approaching == approachables.deposit_junct || state.approaching == approachables.home_junct) {
     int junct_sensor_val = digitalRead(JUNCT_SENSOR_PIN);
     // if falling edge of junct sensor
     if (state.junct_sensor_val && !junct_sensor_val) {
@@ -21,12 +20,12 @@ void loop() {
     state.junct_sensor_val = junct_sensor_val;
   } else if (state.approaching == approachables.block) {
     // Slow down when distance is 10cm
-    int dist_to_block = get_ultrasonic_distance(front_US_pins);
-    if (dist_to_block <= 3) {
+    int dist_to_block = get_ultrasonic_distance();
+    if (dist_to_block <= 10) {
       aquire_block();
-    } else if (dist_to_block < 10) {
+    } /*else if (dist_to_block < 10) {
       state.speed_coeff = BOX_APPROACH_COEFF;
-    }  
+    }*/
   }
 
   // line following 

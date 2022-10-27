@@ -38,7 +38,23 @@ void follow_line_step() {
 
 void refind_line() {
   Serial.println("Task: Refinding Line");
-  unsigned long timer_end;
+  unsigned long timer_end = millis() + 300;
+  turn_on_spot(true);
+  while(millis() < timer_end && !any_front_line_sensors_firing()) {
+    delayMicroseconds(1);
+  }
+  set_motor_speeds(0);
+  if (any_front_line_sensors_firing()) { return; }
+
+  timer_end = millis() + 600;
+  turn_on_spot(false);
+  while(millis() < timer_end && !any_front_line_sensors_firing()) {
+    delayMicroseconds(1);
+  }
+  set_motor_speeds(0);
+  if (any_front_line_sensors_firing()) { return; }
+  
+  /*
   bool seq[4] = {true, false, false, true};
   for (int t = 50; t < 1000; t += 50) {
     for (int s = 0; s < 5; s++) {
@@ -47,25 +63,24 @@ void refind_line() {
       while(millis() < timer_end && !any_front_line_sensors_firing()) {
         delayMicroseconds(1);
       }
-      if (!any_front_line_sensors_firing()) { return; }
+      if (any_front_line_sensors_firing()) { return; }
     }
   }
+  */
 }
 
 void traverse_tunnel() {
   Serial.println("Task: Traversing Tunnel");
+  set_motor_dirs(FORWARD);
   set_motor_speeds(255);
   delay(3500);
-  turn_on_spot(true);
-  while (!any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
-  }
+  refind_line();
   if (state.has_block) {
     state.approaching = approachables.straight_before_juncts;
     state.super_timer_end = millis() + 5000; // TUUUUUUNE
   } else {
     state.approaching = approachables.straight_before_block;
-    state.super_timer_end = millis() + 5000; // TUUUUUUNE
+    state.super_timer_end = millis() + 7100; // TUUUUUUNE
   }
 }
 
@@ -118,6 +133,10 @@ void deposit_block() {
 
 void aquire_block() {
   Serial.println("Task: Acquiring Block");
+  set_motor_speeds(200);
+  while(get_ultrasonic_distance() > 3) {
+    delayMicroseconds(1);
+  }
   set_motor_speeds(0);
   lower_grabber();
   state.has_block = true;

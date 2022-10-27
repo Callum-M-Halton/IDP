@@ -18,7 +18,7 @@ struct speeds_struct {int tiny; int low; int med; int high; int tunnel;};
 speeds_struct speeds = {0, 50, 150, 255};
 struct stblil_struct {int none; int as_before; int high; int med; int low; };
 stblil_struct suggested_timers_by_line_end_likelihoods = { -2, -1, 500, -7, -7 };
-const float BOX_APPROACH_COEFF = 0.3; // MAYBE TUNE?
+const float BOX_APPROACH_COEFF = 0.8; // MAYBE TUNE?
 // -7 as irrelevant for current implementation
 
 // const int MOTOR_CMDS_SIZE = 100;
