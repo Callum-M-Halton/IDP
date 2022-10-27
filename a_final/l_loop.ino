@@ -6,6 +6,8 @@ void loop() {
     if (state.approaching == approachables.straight_before_tunnel) {
       state.approaching = approachables.tunnel;
     } else if (state.approaching == approachables.straight_before_block) {
+      //
+      lower_grabber();
       state.approaching = approachables.block;
     } else if (state.approaching == approachables.straight_before_juncts) {
       state.approaching = approachables.deposit_junct;
