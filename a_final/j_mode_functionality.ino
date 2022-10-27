@@ -11,8 +11,8 @@ void follow_line_step() {
     if (approaching_EOL) {
       if (state.approaching == approachables.tunnel) {
         traverse_tunnel();
-      // === Otherwise assume approaching box ===
-      // If the sector_code was straight_before_start_junct then we're going home
+      } else if (state.approaching == approachables.ramp) {
+        traverse_ramp();
       } else if (state.approaching == approachables.home_box) {
         go_home();
       // Otherwise we're depositing a block
@@ -124,16 +124,11 @@ void aquire_block() {
   lower_grabber();
   state.has_block = true;
   state.speed_coeff = 1.0;
-  turn_on_spot(true);
-  delay(200);
-  while (!any_front_line_sensors_firing()){
-    delayMicroseconds(1);
-  }
   state.approaching = approachables.straight_before_tunnel;
   state.super_timer_end = millis() + 7000;
 }
 
-void leave_start(){
+void leave_start() {
   Serial.println("Task: Leaving Start Box");
   state.super_timer_end = millis() + 9300; // TUNE
   state.approaching = approachables.straight_before_ramp;
@@ -150,6 +145,17 @@ void leave_start(){
   }
 }
 
+void traverse_ramp() {
+  set_motor_speed(false, 255);
+  set_motor_speed(true, 150);
+  delay(2000)
+  //
+  lower_grabber();
+  raise_grabber();
+  refind_line();
+  state.approaching = approachables.straight_before_block;
+  state.super_timer_end = millis() + 7000; //TUNE
+}
 
 /*
 //unsigned long start_time;
