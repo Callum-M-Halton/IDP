@@ -10,8 +10,7 @@ void follow_line_step() {
     if (approaching_EOL) {
       if (state.approaching == approachables.tunnel) {
         traverse_tunnel();
-      // === Otherwise assume approaching box ===
-      // If the sector_code was straight_before_start_junct then we're going home
+      // === Otherwise approaching box ===
       } else if (state.approaching == approachables.home_box) {
         go_home();
       // Otherwise we're depositing a block
