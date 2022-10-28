@@ -126,15 +126,15 @@ void flash_amber() {
   }
 }
 
-void my_micro_delay() {
+void my_milli_delay() {
   flash_amber();
-  delayMicroseconds(1);
+  delay(1);
 }
 
 void my_delay(int delay) {
   unsigned long timer_end = millis() + delay;
   while (millis() < timer_end) {
-    my_micro_delay();
+    my_milli_delay();
   }
 }
 

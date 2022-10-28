@@ -41,7 +41,7 @@ void refind_line() {
   unsigned long timer_end = millis() + 300;
   turn_on_spot(true);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
-    my_micro_delay();
+    my_milli_delay();
   }
   set_motor_speeds(0);
   if (any_front_line_sensors_firing()) { return; }
@@ -49,31 +49,31 @@ void refind_line() {
   timer_end = millis() + 600;
   turn_on_spot(false);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
-    my_micro_delay();
+    my_milli_delay();
   }
   set_motor_speeds(0);
-  if (any_front_line_sensors_firing()) { return; }
-  
-  /*
-  bool seq[4] = {true, false, false, true};
-  for (int t = 50; t < 1000; t += 50) {
-    for (int s = 0; s < 5; s++) {
-      timer_end = millis() + t;
-      turn_on_spot(seq[s]);
-      while(millis() < timer_end && !any_front_line_sensors_firing()) {
-        delayMicroseconds(1);
-      }
-      if (any_front_line_sensors_firing()) { return; }
-    }
-  }
-  */
 }
 
 void traverse_tunnel() {
   Serial.println("Task: Traversing Tunnel");
   set_motor_dirs(FORWARD);
-  set_motor_speeds(255);
-  my_delay(3500);
+  /*
+  unsigned long timer_end = millis() + 3500;
+  while (!any_front_line_sensors_firing() && millis < timer_end) {
+    int dist_to_wall = get_ultrasonic_distance(side_US_pins);
+    if (dist_to_wall < 9) {
+      set_motor_speed(false, 255);
+      set_motor_speed(true, 200);
+    } else (dist_to_wall > 11) {
+      set_motor_speed(true, 255);
+      set_motor_speed(false, 200);
+    } else {
+      set_motor_speeds(255);
+    }
+  }
+  */
+  set_motor_speeds(255);//
+  my_delay(3500);//
   refind_line();
   if (state.has_block) {
     state.approaching = approachables.straight_before_juncts;
@@ -88,10 +88,7 @@ void make_right_turn() {
   Serial.println("Task: Making Right Turn");
 
   turn_on_spot(true);
-  my_delay(200);
-  while (!any_front_line_sensors_firing()) {
-    my_micro_delay();
-  }
+  my_delay(1000);
   if (state.approaching == approachables.deposit_junct) {
     state.approaching = approachables.deposit_box;
   } else {
@@ -126,16 +123,17 @@ void deposit_block() {
   my_delay(1200);
   // rejoin line
   while (!any_front_line_sensors_firing()) {
-    my_micro_delay();
+    my_milli_delay();
   }
   state.approaching = approachables.home_junct;
 }
 
 void aquire_block() {
   Serial.println("Task: Acquiring Block");
-  set_motor_speeds(200);
+  set_motor_speed(false, 255);
+  set_motor_speed(true, 255);
   while(get_ultrasonic_distance() > 3) {
-    my_micro_delay();
+    my_milli_delay();
   }
   set_motor_speeds(0);
   lower_grabber();
@@ -144,7 +142,7 @@ void aquire_block() {
   turn_on_spot(true);
   my_delay(200);
   while (!any_front_line_sensors_firing()){
-    my_micro_delay();
+    my_milli_delay();
   }
   state.approaching = approachables.straight_before_tunnel;
   state.super_timer_end = millis() + 7000;
@@ -163,7 +161,7 @@ void leave_start(){
   my_delay(1200);
 
   while (!any_front_line_sensors_firing()) {
-    my_micro_delay();
+    my_milli_delay();
   }
 }
 
@@ -289,3 +287,17 @@ void print_motor_cmds() {
     state.sector_code_to_turn_off_after = 0;
   }
 */
+
+  /*
+  bool seq[4] = {true, false, false, true};
+  for (int t = 50; t < 1000; t += 50) {
+    for (int s = 0; s < 5; s++) {
+      timer_end = millis() + t;
+      turn_on_spot(seq[s]);
+      while(millis() < timer_end && !any_front_line_sensors_firing()) {
+        delayMicroseconds(1);
+      }
+      if (any_front_line_sensors_firing()) { return; }
+    }
+  }
+  */
