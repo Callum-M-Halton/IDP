@@ -51,12 +51,6 @@ void set_motor_speed(bool is_right, int speed) {
       L_motor -> setSpeed(speed);
     }
 	}
-  if (state.motor_speeds[0] == 0 && state.motor_speeds[1] == 0) {
-    digitalWrite(AMBER_LED_PIN, HIGH);
-  } else {
-    // figure out flashing in hardware?
-    digitalWrite(AMBER_LED_PIN, HIGH);
-  }
 }
 
 void set_motor_speeds(int speed) {
@@ -76,14 +70,14 @@ bool test_if_magnetic() {
   if(avg > HALL_SENSOR_THRESHOLD) {
     //turn on red light for 5 sec if magnetic
     digitalWrite(RED_LED_PIN, HIGH);
-    delay(5000);
+    my_delay(5000);
     digitalWrite(RED_LED_PIN, LOW);
     // box is magnetic
     return true;
   } else {
     //turn on green light for 5 sec if not magnetic
     digitalWrite(GREEN_LED_PIN, LOW);
-    delay(5000);
+    my_delay(5000);
     digitalWrite(GREEN_LED_PIN, LOW);
     //box is not magnetic
     return false;
@@ -118,6 +112,30 @@ void turn_on_spot(bool to_right) {
     
     set_motor_speed(true, 255); //right motor
     set_motor_speed(false, 255); //left motor
+}
+
+void flash_amber() {
+  if (state.motor_speeds[0] == 0 && state.motor_speeds[1] == 0) {
+    digitalWrite(AMBER_LED_PIN, LOW);
+  } else {
+    if (millis() % 500 < 250) {
+      digitalWrite(AMBER_LED_PIN, HIGH);
+    } else {
+      digitalWrite(AMBER_LED_PIN, LOW);
+    }
+  }
+}
+
+void my_micro_delay() {
+  flash_amber();
+  delayMicroseconds(1);
+}
+
+void my_delay(int delay) {
+  unsigned long timer_end = millis() + delay;
+  while (millis() < timer_end) {
+    my_micro_delay();
+  }
 }
 
 /* ============= bits ==============

@@ -31,6 +31,8 @@ void loop() {
   // line following 
   follow_line_step();
 
+  // update amber LED
+  flash_amber();
 
   //print_sensor_vals();
   //Serial.println(digitalRead(JUNCT_SENSOR_PIN));

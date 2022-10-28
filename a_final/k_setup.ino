@@ -28,22 +28,22 @@ void setup() {
   // hardware config
   set_motor_speeds(0); /////////
   raise_grabber();
-  delay(10000);
+  my_delay(10000);
 
   leave_start();
 }
 
   /*if (false) {
     turn_on_spot(false);
-    delay(500);
+    my_delay(500);
     set_motor_dirs(FORWARD);
     set_motor_speeds(255);
-    delay(1000);
+    my_delay(1000);
     turn_on_spot(true);
-    delay(500);
+    my_delay(500);
     set_motor_dirs(FORWARD);
     set_motor_speeds(255);
-    delay(1000);
+    my_delay(1000);
   }*/
 
 /*

@@ -41,7 +41,7 @@ void refind_line() {
   unsigned long timer_end = millis() + 300;
   turn_on_spot(true);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
+    my_micro_delay();
   }
   set_motor_speeds(0);
   if (any_front_line_sensors_firing()) { return; }
@@ -49,7 +49,7 @@ void refind_line() {
   timer_end = millis() + 600;
   turn_on_spot(false);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
+    my_micro_delay();
   }
   set_motor_speeds(0);
   if (any_front_line_sensors_firing()) { return; }
@@ -73,7 +73,7 @@ void traverse_tunnel() {
   Serial.println("Task: Traversing Tunnel");
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
-  delay(3500);
+  my_delay(3500);
   refind_line();
   if (state.has_block) {
     state.approaching = approachables.straight_before_juncts;
@@ -88,9 +88,9 @@ void make_right_turn() {
   Serial.println("Task: Making Right Turn");
 
   turn_on_spot(true);
-  delay(200);
+  my_delay(200);
   while (!any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
+    my_micro_delay();
   }
   if (state.approaching == approachables.deposit_junct) {
     state.approaching = approachables.deposit_box;
@@ -103,7 +103,7 @@ void go_home() {
   Serial.println("Task: Going Home");
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
-  delay(1000);
+  my_delay(1000);
   set_motor_speeds(0);
   while (1);
 }
@@ -113,20 +113,20 @@ void deposit_block() {
   // drop off block
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
-  delay(500);
+  my_delay(500);
   raise_grabber();
   set_motor_dirs(BACKWARD);
   set_motor_speeds(255);
-  delay(500);
+  my_delay(500);
   // escape box
   turn_on_spot(false);
-  delay(1500);
+  my_delay(1500);
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
-  delay(1200);
+  my_delay(1200);
   // rejoin line
-  while (!any_front_line_sensors_firing()){
-    delayMicroseconds(1);
+  while (!any_front_line_sensors_firing()) {
+    my_micro_delay();
   }
   state.approaching = approachables.home_junct;
 }
@@ -135,16 +135,16 @@ void aquire_block() {
   Serial.println("Task: Acquiring Block");
   set_motor_speeds(200);
   while(get_ultrasonic_distance() > 3) {
-    delayMicroseconds(1);
+    my_micro_delay();
   }
   set_motor_speeds(0);
   lower_grabber();
   state.has_block = true;
   state.speed_coeff = 1.0;
   turn_on_spot(true);
-  delay(200);
+  my_delay(200);
   while (!any_front_line_sensors_firing()){
-    delayMicroseconds(1);
+    my_micro_delay();
   }
   state.approaching = approachables.straight_before_tunnel;
   state.super_timer_end = millis() + 7000;
@@ -156,14 +156,14 @@ void leave_start(){
   state.approaching = approachables.straight_before_tunnel;
   //rotate right slightly to hit line at angle
   turn_on_spot(false);
-  delay(500);
+  my_delay(500);
 
   // go to the line and skip the box
   set_motor_dirs(FORWARD);
-  delay(1200);
+  my_delay(1200);
 
-  while (!any_front_line_sensors_firing()){
-    delayMicroseconds(1);
+  while (!any_front_line_sensors_firing()) {
+    my_micro_delay();
   }
 }
 
@@ -191,7 +191,7 @@ void reverse_run(bool ignore_sensors) {
       state.timer_end = millis() + timer_length;
       state.time_stamp_of_cmd_being_rev_run = last_cmd.time_stamp;
     } else {
-      delay(1);
+      my_delay(1);
     }
   }
   set_motor_speeds(0);
@@ -203,14 +203,14 @@ void leave_start() {
   Serial.println("Task: Leaving Start");
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
-  delay(TIME_TO_DRIVE_FORWARD_FOR_AT_START);
+  my_delay(TIME_TO_DRIVE_FORWARD_FOR_AT_START);
 
   // reverse until the side sensor detects the line
   set_motor_dirs(BACKWARD);
   set_motor_speeds(255);
   bool not_yet = true
   while (!digitalRead(JUNCT_SENSOR_PIN)) {
-    delayMicroseconds(1);
+    my_delay(Microseconds(1);
   }
   
   // turns right until line detected
@@ -221,7 +221,7 @@ void leave_start() {
   set_motor_speeds(255);
   // while no front sensors are firing
   while (!any_front_line_sensors_firing()){
-    delayMicroseconds(1);
+    my_delay(Microseconds(1);
   }
   set_motor_speeds(0);
   // We're now on the main loop at the first on-loop sector
@@ -235,7 +235,7 @@ void leave_start() {
   set_motor_speed(false, 255);
   set_motor_speed(true, 150);
   while(!any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
+    my_delay(Microseconds(1);
   }
 
   // perturb right if sector is ramp_straight otherwise perturb left
@@ -245,12 +245,12 @@ void leave_start() {
   set_motor_dir(true, dirs[int(perturb_right)], false);
   set_motor_speeds(255, false);
   while (any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
+    my_delay(Microseconds(1);
   }
   set_motor_dir(false, dirs[int(perturb_right)], false);
   set_motor_dir(true, dirs[int(!perturb_right)], false);
   while (!any_front_line_sensors_firing()) {
-    delayMicroseconds(1);
+    my_delay(Microseconds(1);
   }
   set_motor_speeds(0, false);
   digitalWrite(ERROR_LED_PIN, LOW);
@@ -276,7 +276,7 @@ void print_motor_cmds() {
   reverse_run(true);
   set_motor_dirs(BACKWARD);
   set_motor_speeds(255);
-  delay(200);
+  my_delay(200);
   set_motor_speeds(0);
   state.approaching = approachables.junct_on_right;
   state.sector_code_to_turn_off_after = -1;
