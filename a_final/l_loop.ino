@@ -3,7 +3,11 @@
 void loop() {
 
   if (millis() >= state.super_timer_end) {
-    if (state.approaching == approachables.straight_before_tunnel) {
+        if (state.approaching == approachables.straight_before_ramp) {
+      //
+      lower_grabber();
+      state.approaching == approachables.ramp;
+    } else if (state.approaching == approachables.straight_before_tunnel) {
       state.approaching = approachables.tunnel;
     } else if (state.approaching == approachables.straight_before_block) {
       state.approaching = approachables.block;

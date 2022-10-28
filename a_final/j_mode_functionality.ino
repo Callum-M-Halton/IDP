@@ -2,13 +2,16 @@
 
 void follow_line_step() {
   int suggested_timer = correct_trajectory();
-  bool approaching_EOL = ( state.approaching == approachables.tunnel
+  bool approaching_EOL = (state.approaching == approachables.tunnel
     || state.approaching == approachables.home_box
     || state.approaching == approachables.deposit_box
+    || state.approaching == approachables.ramp
   );
   if (suggested_timer != suggested_timers_by_line_end_likelihoods.none) {
     if (approaching_EOL) {
-      if (state.approaching == approachables.tunnel) {
+      if (state.approaching == approachables.ramp) {
+        traverse_ramp();
+      } else if (state.approaching == approachables.tunnel) {
         traverse_tunnel();
       // === Otherwise approaching box ===
       } else if (state.approaching == approachables.home_box) {
@@ -130,7 +133,7 @@ void deposit_block() {
 
 void aquire_block() {
   Serial.println("Task: Acquiring Block");
-  set_motor_speed(false, 255);
+  set_motor_speed(false, 200);
   set_motor_speed(true, 255);
   while(get_ultrasonic_distance() > 3) {
     my_milli_delay();
@@ -164,6 +167,19 @@ void leave_start(){
     my_milli_delay();
   }
 }
+
+void traverse_ramp() {
+  set_motor_speed(false, 255);
+  set_motor_speed(true, 150);
+  delay(2000);
+  //
+  lower_grabber();
+  raise_grabber();
+  refind_line();
+  state.approaching = approachables.straight_before_block;
+  state.super_timer_end = millis() + 7000; //TUNE
+}
+
 
 
 /*

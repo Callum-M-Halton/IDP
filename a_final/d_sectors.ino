@@ -6,10 +6,10 @@ struct approachables_struct {
   const int deposit_junct; const int home_junct;
   const int deposit_box; const int home_box;
   const int straight_before_block; const int straight_before_juncts;
-  const int straight_before_tunnel;
-  /*const int straight; const int corner; const int junct_on_right;*/
+  const int straight_before_tunnel; const int straight_before_ramp;
+  const int ramp;
 };
-constexpr approachables_struct approachables = {0,1,2,3,4,5,6,7,8,9,10};
+constexpr approachables_struct approachables = {0,1,2,3,4,5,6,7,8,9,10,11,12};
 
 // struct sector_struct {
 //   String name;
