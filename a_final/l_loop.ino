@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 void loop() {
-
+  if (true) {
   if (millis() >= state.super_timer_end) {
         if (state.approaching == approachables.straight_before_ramp) {
       //
@@ -24,7 +24,7 @@ void loop() {
     state.junct_sensor_val = junct_sensor_val;
   } else if (state.approaching == approachables.block) {
     // Slow down when distance is 10cm
-    int dist_to_block = get_ultrasonic_distance();
+    int dist_to_block = get_ultrasonic_distance(true);
     if (dist_to_block <= 10) {
       aquire_block();
     } /*else if (dist_to_block < 10) {
@@ -37,7 +37,7 @@ void loop() {
 
   // update amber LED
   flash_amber();
-
+  }
   //print_sensor_vals();
   //Serial.println(digitalRead(JUNCT_SENSOR_PIN));
 }

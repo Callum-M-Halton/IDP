@@ -127,7 +127,7 @@ void flash_amber() {
 }
 
 void my_milli_delay() {
-  flash_amber();
+  //flash_amber();
   delay(1);
 }
 
@@ -136,6 +136,32 @@ void my_delay(int delay) {
   while (millis() < timer_end) {
     my_milli_delay();
   }
+}
+
+int get_ultrasonic_distance(bool is_front) {
+  // Clears the TRIG_PIN condition
+  int trig_pin;
+  int echo_pin;
+  if (is_front) {
+    trig_pin = FRONT_TRIG_PIN;
+    echo_pin = FRONT_ECHO_PIN;
+  } else {
+    trig_pin = SIDE_TRIG_PIN;
+    echo_pin = SIDE_ECHO_PIN;
+  }
+  digitalWrite(trig_pin, LOW);
+  delayMicroseconds(2);
+  // Sets the trig_pin HIGH (ACTIVE) for 10 microseconds
+  digitalWrite(trig_pin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig_pin, LOW);
+  // Reads the ECHO_PIN, returns the sound wave travel time in microseconds
+  long duration = pulseIn(echo_pin, HIGH);
+  // Calculating the distance
+  int distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
+  // Displays the distance on the Serial Monitor
+  Serial.println(String(distance));
+  return distance;
 }
 
 /* ============= bits ==============

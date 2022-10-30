@@ -135,13 +135,14 @@ void aquire_block() {
   Serial.println("Task: Acquiring Block");
   set_motor_speed(false, 200);
   set_motor_speed(true, 255);
-  while(get_ultrasonic_distance() > 3) {
+  while(get_ultrasonic_distance(true) > 3) {
     my_milli_delay();
   }
   set_motor_speeds(0);
   lower_grabber();
   state.has_block = true;
   state.speed_coeff = 1.0;
+  while(1);
   turn_on_spot(true);
   my_delay(200);
   while (!any_front_line_sensors_firing()){

@@ -13,8 +13,8 @@ void setup() {
   // attach Servo and configure ultrasonic pins
   myservo.attach(SERVO_PIN);
   // Set trig pins as outputs and echo pins as inputs
-  pinMode(4, OUTPUT);  // pinMode(side_US_pins.trig, OUTPUT);
-  pinMode(5, INPUT); // pinMode(side_US_pins.echo, INPUT);
+  pinMode(FRONT_TRIG_PIN, OUTPUT); pinMode(SIDE_TRIG_PIN, OUTPUT);
+  pinMode(FRONT_ECHO_PIN, INPUT); pinMode(SIDE_ECHO_PIN, INPUT);
 
   // Setting the IR sensor pins as inputs
   pinMode(front_sensor_pins.left, INPUT);
@@ -30,7 +30,8 @@ void setup() {
   raise_grabber();
   my_delay(10000);
 
-  leave_start();
+  state.approaching = approachables.block;
+  //leave_start();
 }
 
   /*if (false) {

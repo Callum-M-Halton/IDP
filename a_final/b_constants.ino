@@ -1,15 +1,19 @@
 #include <Arduino.h>
 
 // pins (not settled)
+struct front_sensor_pins_struct {int left; int mid; int right;};
+front_sensor_pins_struct front_sensor_pins  = {0,1,2};
 const byte JUNCT_SENSOR_PIN = 3;
+const byte FRONT_TRIG_PIN = 4;
+const byte FRONT_ECHO_PIN = 5;
+const byte SIDE_TRIG_PIN = 6;
+const byte SIDE_ECHO_PIN = 7;
+const byte SERVO_PIN = 9; //has to go in 9 or 10 (servo specific pins)
+const byte AMBER_LED_PIN = 12; // SET
+// const int HALL_SENSOR_PIN = A1;
 // const byte ERROR_LED_PIN = 4;
 // const byte GREEN_LED_PIN = 10;
 // const byte RED_LED_PIN = 11;
-const byte AMBER_LED_PIN = 12;
-const byte SERVO_PIN = 9; //has to go in 9 or 10 (servo specific pins)
-// const int HALL_SENSOR_PIN = A1;
-struct front_sensor_pins_struct {int left; int mid; int right;};
-front_sensor_pins_struct front_sensor_pins  = {0,1,2};
 
 // other
 const int DROP_GRABBER_VALUE = 10; //TUNE
