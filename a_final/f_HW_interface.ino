@@ -80,7 +80,6 @@ void turn_on_spot(bool to_right) {
     set_motor_speed(false, 255); //left motor
 }
 
-/*
 bool test_if_magnetic() {
   Serial.println("Testing block with hall sensor");
   int tot = 0;
@@ -105,7 +104,6 @@ bool test_if_magnetic() {
     return false;
   }
 }
-*/
 
 void lower_grabber() {
     myservo.write(DROP_GRABBER_VALUE);

@@ -28,7 +28,7 @@ struct state_struct {
   float speed_coeff; int junct_sensor_val;
   unsigned long super_timer_end; int block;
   int blocks_collected; unsigned long start_time;
-  int last_side_dist;
+  int last_side_dist; unsigned long time_at_start_of_block_straight;
 
   LinkedList<motor_cmd_struct> motor_cmds; unsigned long time_stamp_of_cmd_being_rev_run;
 };
@@ -39,7 +39,7 @@ state_struct state = {
   1.0, 0,
   0, block_types.none,
   0, 0, // FOR NOW!!!! 
-  -1,
+  -1, 0,
 
   LinkedList<motor_cmd_struct>(), 0
 };

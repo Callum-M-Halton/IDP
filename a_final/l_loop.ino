@@ -14,6 +14,7 @@ void loop() {
         case approachables.straight_before_block:
           state.approaching = approachables.block; break;
         case approachables.block_straight:
+          state.time_at_start_of_block_straight = millis();
           state.approaching = approachables.block_to_left; break;
         case approachables.straight_before_juncts:
           state.approaching = approachables.green_junct; break;
@@ -42,6 +43,7 @@ void loop() {
           //
           set_motor_speeds(0);
           while(1);
+          find_block();
         }
       }
       state.last_side_dist = dist;

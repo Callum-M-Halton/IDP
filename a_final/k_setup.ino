@@ -15,6 +15,8 @@ void setup() {
   // Set trig pins as outputs and echo pins as inputs for ultrasonics
   pinMode(FRONT_TRIG_PIN, OUTPUT); pinMode(SIDE_TRIG_PIN, OUTPUT);
   pinMode(FRONT_ECHO_PIN, INPUT); pinMode(SIDE_ECHO_PIN, INPUT);
+  // Setup hall sensor
+  pinMode(HALL_SENSOR_PIN, OUTPUT);
 
   // Setting the IR sensor pins as inputs
   pinMode(front_sensor_pins.left, INPUT);
@@ -24,6 +26,8 @@ void setup() {
   
   // Setting LEDs
   pinMode(AMBER_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
  
   // hardware config
   set_motor_speeds(0); /////////

@@ -12,7 +12,7 @@ void print_motor_cmds() {
   }
 }
 
-void reverse_run(bool ignore_sensors) {
+void reverse_run(bool ignore_sensors=false) {
   state.time_stamp_of_cmd_being_rev_run = millis();
   state.timer_end = millis();
   //start_time = millis();
@@ -46,6 +46,48 @@ void go_home() {
   my_delay(1000);
   set_motor_speeds(0);
   while (1);
+}
+
+void find_block() {
+  unsigned long time_spent_on_block_straight = millis() - state.time_at_start_of_block_straight;
+  add_motor_cmd(true);
+  turn_on_spot(false);
+  delay(1000);
+  set_motor_speeds(0);
+
+  int dist = get_ultrasonic_distance(true);
+  int prev_dist;
+  while (1) {
+    prev_dist = dist;
+    set_motor_dirs(FORWARD);
+    set_motor_speeds(255);
+    while (abs(dist - prev_dist) < DELTA_DIST_FOR_LOST_BLOCK) { // TUNE
+      my_milli_delay();
+      prev_dist = dist;
+      dist = get_ultrasonic_distance(true);
+      if (dist <= 3) {
+        set_motor_speeds(0);
+        break;
+      }
+    }
+    turn_on_spot(true);
+    while (abs(dist - prev_dist) >= DELTA_DIST_FOR_LOST_BLOCK) {
+      my_milli_delay();
+      dist = get_ultrasonic_distance(false);
+    }
+  }
+
+  if (true/*test_if_magnetic()*/) {
+    state.block = block_types.mag;
+  } else {
+    state.block = block_types.non_mag;
+  }
+  lower_grabber();
+
+  reverse_run();
+  refind_line();
+  state.approaching = approachables.straight_before_tunnel;
+  state.super_timer_end = millis() + (10000 - time_spent_on_block_straight); // TUNE
 }
 
 void next_junct() {
@@ -119,12 +161,18 @@ void aquire_block() {
     my_milli_delay();
   }
   set_motor_speeds(0);
-  // insert tester code
-  lower_grabber();
-  state.block = block_types.mag;
   // state.speed_coeff = 1.0;
+  
+  if (true/*test_if_magnetic()*/) {
+    state.block = block_types.mag;
+  } else {
+    state.block = block_types.non_mag;
+  }
+  lower_grabber();
+
   //
   while(1);
+
   if (GO_VIA_RAMP) {
     state.super_timer_end = millis() + 7000; // TUNE
   } else {
