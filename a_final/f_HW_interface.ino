@@ -107,10 +107,12 @@ bool test_if_magnetic() {
 
 void lower_grabber() {
     myservo.write(DROP_GRABBER_VALUE);
+    my_delay(1000);
 }
 
 void raise_grabber() {
     myservo.write(RAISE_GRABBER_VALUE);
+    my_delay(1000);
 }
 
 void flash_amber() {

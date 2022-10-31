@@ -30,6 +30,11 @@ void reverse_run(bool ignore_sensors=false) {
       set_motor_speed(true, last_cmd.speeds[1], false);
 
       unsigned long timer_length = state.time_stamp_of_cmd_being_rev_run - last_cmd.time_stamp;
+
+      if (last_cmd.dirs[0] == FORWARD && last_cmd.dirs[1] == FORWARD) {
+        timer_length += 300;
+      }
+      
       state.timer_end = millis() + timer_length;
       state.time_stamp_of_cmd_being_rev_run = last_cmd.time_stamp;
     } else {
@@ -39,11 +44,15 @@ void reverse_run(bool ignore_sensors=false) {
   set_motor_speeds(0);
 }
 
-void go_home(int delay) {
+void go_home() {
   Serial.println("Task: Going Home");
+  // turn right at junction
+  turn_on_spot(true);
+  my_delay(1200);
+  // go forwards into home box
   set_motor_dirs(FORWARD);
-  set_motor_speeds(255);
-  my_delay(delay);
+  my_delay(1500);
+  // stop
   set_motor_speeds(0);
   while (1);
 }
@@ -100,10 +109,16 @@ void next_junct() {
 
 void deposit_block() {
   Serial.println("Task: Depositing Block");
-  // drop off block
+  // turn at junct recording intial position
+  add_motor_cmd(true);
+  turn_on_spot(true);
+  my_delay(1150);
+  // move into box
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
   my_delay(500);
+  // stop and raise grabber
+  set_motor_speeds(0);
   raise_grabber();
 
   // === escape box ===
@@ -111,43 +126,25 @@ void deposit_block() {
   if (state.approaching = approachables.red_junct && millis() > state.start_time + 270000) { //TUNE
     turn_on_spot(false);
     delay(3000); //TUNE
-    go_home(5000); //TUNE
+    //go_home(5000); //TUNE
   // Otherwise we can afford to get home via another loop
   } else {
+    // update state of block collection
     state.block = block_types.none;
     state.blocks_collected++;
-    set_motor_dirs(BACKWARD);
-    my_delay(500);
-    turn_on_spot(false);
-    my_delay(1500);
+    // return to initial position and stop
+    reverse_run(true);
+    set_motor_speeds(0);
+    // drive past junction
     set_motor_dirs(FORWARD);
     set_motor_speeds(255);
-    my_delay(1200);
-    // rejoin line
-    while (!any_front_line_sensors_firing()) {
-      my_milli_delay();
-    }
+    my_delay(1000);
+    // return to line
+    refind_line();
+    while(1);
     next_junct();
   }
 
-}
-
-void make_right_turn() {
-  Serial.println("Task: Making Right Turn");
-  turn_on_spot(true);
-  my_delay(1000); // TUNE
-  /*
-  switch (state.approaching) {
-    case approachables.red_junct: state.approaching = approachables.red_box; break;
-    case approachables.green_junct: state.approaching = approachables.green_box; break;
-    case approachables.home_junct: state.approaching = approachables.home_box; break;
-  }
-  */
-  if (state.approaching == approachables.home_junct) {
-    go_home(1000); // TUNE
-  } else {
-    deposit_block();
-  }
 }
 
 void handle_junct() {
@@ -155,9 +152,13 @@ void handle_junct() {
        (state.block = block_types.mag && state.approaching == approachables.green_junct)
     || (state.block = block_types.non_mag && state.approaching == approachables.red_junct)
     || (state.block = block_types.none && state.approaching == approachables.home_junct 
-        && millis() > state.start_time + 240000) // TUNE
+        /*&& millis() > state.start_time + 240000*/) // TUNE
   ) {
-    make_right_turn();
+    if (state.approaching == approachables.home_junct) {
+      go_home();
+    } else {
+      deposit_block();
+    }
   } else {
     next_junct();
   }
@@ -179,7 +180,6 @@ void aquire_block() {
     state.block = block_types.non_mag;
   }
   lower_grabber();
-  my_delay(1000);
 
   if (GO_VIA_RAMP) {
     state.super_timer_end = millis() + 7000; // TUNE
@@ -249,15 +249,15 @@ void refind_line() {
   Serial.println("Task: Refinding Line");
   unsigned long timer_end = millis() + 300;
   turn_on_spot(true);
-  while(millis() < timer_end && !any_front_line_sensors_firing()) {
+  while(millis() < timer_end && 1/*!any_front_line_sensors_firing()*/) {
     my_milli_delay();
   }
   set_motor_speeds(0);
-  if (any_front_line_sensors_firing()) { return; }
+  if (0/*any_front_line_sensors_firing()*/) { return; }
 
   timer_end = millis() + 600;
   turn_on_spot(false);
-  while(millis() < timer_end && !any_front_line_sensors_firing()) {
+  while(millis() < timer_end && 1/*!any_front_line_sensors_firing()*/) {
     my_milli_delay();
   }
   set_motor_speeds(0);
@@ -378,3 +378,17 @@ void leave_start() {
     }
   }
   */
+/*
+      turn_on_spot(false);
+    my_delay(1500);
+    set_motor_dirs(FORWARD);
+    set_motor_speeds(255);
+    my_delay(1200);
+    //
+    set_motor_speeds(0);
+    while(1)
+    // rejoin line
+    while (!any_front_line_sensors_firing()) {
+      my_milli_delay();
+    }
+    */
