@@ -29,13 +29,16 @@ void setup() {
   pinMode(RED_LED_PIN, OUTPUT);
   pinMode(GREEN_LED_PIN, OUTPUT);
  
-  // hardware config
+  // robot state config and record start time
   set_motor_speeds(0); /////////
   raise_grabber();
   my_delay(10000);
+  state.start_time = millis();
 
-  //state.approaching = approachables.block;
-  leave_start();
+  // give the robot it's first task and/or target
+  //state.approaching = approachables.tunnel;
+  //leave_start();
+  traverse_tunnel();
 }
 
   /*if (false) {

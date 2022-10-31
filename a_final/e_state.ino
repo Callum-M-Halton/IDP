@@ -38,7 +38,7 @@ state_struct state = {
   0, {-1, -1},
   1.0, 0,
   0, block_types.none,
-  0, 0, // FOR NOW!!!! 
+  0, 0,
   -1, 0,
 
   LinkedList<motor_cmd_struct>(), 0

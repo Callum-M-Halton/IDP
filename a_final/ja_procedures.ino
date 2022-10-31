@@ -39,11 +39,11 @@ void reverse_run(bool ignore_sensors=false) {
   set_motor_speeds(0);
 }
 
-void go_home() {
+void go_home(int delay) {
   Serial.println("Task: Going Home");
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
-  my_delay(1000);
+  my_delay(delay);
   set_motor_speeds(0);
   while (1);
 }
@@ -87,7 +87,7 @@ void find_block() {
   reverse_run();
   refind_line();
   state.approaching = approachables.straight_before_tunnel;
-  state.super_timer_end = millis() + (10000 - time_spent_on_block_straight); // TUNE
+  state.super_timer_end = millis() + (TIME_FOR_BLOCK_STRAIGHT - time_spent_on_block_straight); // TUNE
 }
 
 void next_junct() {
@@ -105,21 +105,31 @@ void deposit_block() {
   set_motor_speeds(255);
   my_delay(500);
   raise_grabber();
-  state.block = block_types.none;
-  state.blocks_collected++;
-  set_motor_dirs(BACKWARD);
-  my_delay(500);
-  // escape box
-  turn_on_spot(false);
-  my_delay(1500);
-  set_motor_dirs(FORWARD);
-  set_motor_speeds(255);
-  my_delay(1200);
-  // rejoin line
-  while (!any_front_line_sensors_firing()) {
-    my_milli_delay();
+
+  // === escape box ===
+  // If we're in the red box and time is running low we need to dash home
+  if (state.approaching = approachables.red_junct && millis() > state.start_time + 270000) { //TUNE
+    turn_on_spot(false);
+    delay(3000); //TUNE
+    go_home(5000); //TUNE
+  // Otherwise we can afford to get home via another loop
+  } else {
+    state.block = block_types.none;
+    state.blocks_collected++;
+    set_motor_dirs(BACKWARD);
+    my_delay(500);
+    turn_on_spot(false);
+    my_delay(1500);
+    set_motor_dirs(FORWARD);
+    set_motor_speeds(255);
+    my_delay(1200);
+    // rejoin line
+    while (!any_front_line_sensors_firing()) {
+      my_milli_delay();
+    }
+    next_junct();
   }
-  next_junct();
+
 }
 
 void make_right_turn() {
@@ -134,7 +144,7 @@ void make_right_turn() {
   }
   */
   if (state.approaching == approachables.home_junct) {
-    go_home();
+    go_home(1000); // TUNE
   } else {
     deposit_block();
   }
@@ -145,7 +155,7 @@ void handle_junct() {
        (state.block = block_types.mag && state.approaching == approachables.green_junct)
     || (state.block = block_types.non_mag && state.approaching == approachables.red_junct)
     || (state.block = block_types.none && state.approaching == approachables.home_junct 
-        /* && millis() > state.start_time + 240000 */)
+        && millis() > state.start_time + 240000) // TUNE
   ) {
     make_right_turn();
   } else {
@@ -155,7 +165,7 @@ void handle_junct() {
 
 void aquire_block() {
   Serial.println("Task: Acquiring Block");
-  set_motor_speed(false, 200);
+  set_motor_speed(false, 220);
   set_motor_speed(true, 255);
   while(get_ultrasonic_distance(true) > 3) {
     my_milli_delay();
@@ -163,25 +173,23 @@ void aquire_block() {
   set_motor_speeds(0);
   // state.speed_coeff = 1.0;
   
-  if (true/*test_if_magnetic()*/) {
+  if (false/*test_if_magnetic()*/) {
     state.block = block_types.mag;
   } else {
     state.block = block_types.non_mag;
   }
   lower_grabber();
-
-  //
-  while(1);
+  my_delay(1000);
 
   if (GO_VIA_RAMP) {
     state.super_timer_end = millis() + 7000; // TUNE
   } else {
     turn_on_spot(true);
-    my_delay(200);
+    my_delay(2000);
     while (!any_front_line_sensors_firing()){
       my_milli_delay();
     }
-    state.super_timer_end = millis() + 7000; // TUNE
+    state.super_timer_end = millis() + 6500; // TUNE
   }
   state.approaching = approachables.straight_before_tunnel;
   
@@ -207,23 +215,26 @@ void traverse_ramp() {
 void traverse_tunnel() {
   Serial.println("Task: Traversing Tunnel");
   set_motor_dirs(FORWARD);
-  /*
-  unsigned long timer_end = millis() + 3500;
-  while (!any_front_line_sensors_firing() && millis < timer_end) {
-    int dist_to_wall = get_ultrasonic_distance(side_US_pins);
-    if (dist_to_wall < 9) {
+  set_motor_speeds(255);//
+  my_delay(500);
+
+  unsigned long timer_end = millis() + 100000;//3500;
+  while (!any_front_line_sensors_firing() && millis() < timer_end) {
+    int dist_to_wall = get_ultrasonic_distance(false);
+    Serial.println(dist_to_wall);
+    if (dist_to_wall < 6) {
       set_motor_speed(false, 255);
-      set_motor_speed(true, 200);
-    } else (dist_to_wall > 11) {
+      set_motor_speed(true, 220);
+    } else if (dist_to_wall > 6) {
       set_motor_speed(true, 255);
-      set_motor_speed(false, 200);
+      set_motor_speed(false, 220);
     } else {
       set_motor_speeds(255);
     }
   }
-  */
-  set_motor_speeds(255);//
-  my_delay(3500);//
+  set_motor_speeds(0);
+  while(1);
+
   refind_line();
   if (state.block == block_types.none) {
     state.approaching = approachables.straight_before_block;

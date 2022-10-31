@@ -9,13 +9,21 @@ void loop() {
           lower_grabber();
           state.approaching == approachables.ramp;
         break;
-        case approachables.straight_before_tunnel: 
+        case approachables.straight_before_tunnel:
+          //
+          myservo.write(20);
           state.approaching = approachables.tunnel; break;
         case approachables.straight_before_block:
           state.approaching = approachables.block; break;
         case approachables.block_straight:
-          state.time_at_start_of_block_straight = millis();
-          state.approaching = approachables.block_to_left; break;
+          if (millis() > state.start_time + 240000) {
+            state.super_timer_end = millis() + TIME_FOR_BLOCK_STRAIGHT; 
+            state.approaching = approachables.straight_before_tunnel; 
+          } else {
+            state.time_at_start_of_block_straight = millis();
+            state.approaching = approachables.block_to_left;           
+          }
+        break;
         case approachables.straight_before_juncts:
           state.approaching = approachables.green_junct; break;
       }
