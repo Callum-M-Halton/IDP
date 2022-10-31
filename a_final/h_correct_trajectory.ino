@@ -1,10 +1,13 @@
 #include <Arduino.h>
 
+struct line_end_likelihoods_struct {int none; int as_before; int high; int low;};
+line_end_likelihoods_struct line_end_likelihoods = {0,1,2,3};
+
 int correct_trajectory() {
   set_motor_dirs(FORWARD);
   int sensors[3] = {digitalRead(front_sensor_pins.left),
     digitalRead(front_sensor_pins.mid), digitalRead(front_sensor_pins.right)};
-  int suggested_timer = suggested_timers_by_line_end_likelihoods.none;
+  int line_end_likelihood = line_end_likelihoods.none;
   if (sensors[0]) {
     if (sensors[1]) {
       if (sensors[2]) {
@@ -55,10 +58,9 @@ int correct_trajectory() {
         set_motor_speed(false, speeds.high);
       } else {
         // case [0, 0, 0]
-        // Don't do anything if not off the line in the last correction
+        // Don't do anything if already off the line in the last correction
         if (state.offset_ext == offset_exts.far) {
-          suggested_timer =
-            suggested_timers_by_line_end_likelihoods.as_before;
+          line_end_likelihood = line_end_likelihoods.as_before;
         } else {
           // decide how to change motor speeds
           if (state.offset_dir == offset_dirs.left) {
@@ -69,16 +71,10 @@ int correct_trajectory() {
             set_motor_speed(true, speeds.high);
           }
           // decide what the line_end_likelihood is 
-          switch (state.offset_ext) {
-            case offset_exts.none:
-              suggested_timer = suggested_timers_by_line_end_likelihoods.high;
-              break;
-            case offset_exts.little:
-              suggested_timer = suggested_timers_by_line_end_likelihoods.med;
-              break;
-            case offset_exts.mid:
-              suggested_timer = suggested_timers_by_line_end_likelihoods.low;
-              break;
+          if (state.offset_ext == offset_exts.none) {
+            line_end_likelihood = line_end_likelihoods.high;
+          } else {
+            line_end_likelihood = line_end_likelihoods.low;
           }
           // set new offset extent
           state.offset_ext = offset_exts.far;
@@ -86,5 +82,5 @@ int correct_trajectory() {
       }
     }
   }
-  return suggested_timer;
+  return line_end_likelihood;
 }
