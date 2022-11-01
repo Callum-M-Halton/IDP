@@ -12,12 +12,11 @@ void print_sensor_vals() {
   Serial.println(digitalRead(front_sensor_pins.right));
 }
 
-void add_motor_cmd(bool is_flag=false) {
+void add_motor_cmd() {
   motor_cmd_struct motor_cmd = {
     {state.motor_dirs[0], state.motor_dirs[1]},
     {state.motor_speeds[0], state.motor_speeds[1]},
-    millis(),
-    is_flag
+    millis()
   };
   state.motor_cmds.add(motor_cmd);
   if (state.motor_cmds.size() > MOTOR_CMDS_SIZE) {
@@ -25,7 +24,7 @@ void add_motor_cmd(bool is_flag=false) {
   }
 }
 
-void set_motor_dir(bool is_right, int dir, bool record=true) {
+void set_motor_dir(bool is_right, int dir) {
   if (state.motor_dirs[int(is_right)] != dir) {
     state.motor_dirs[int(is_right)] = dir;
     if (is_right) {
@@ -33,7 +32,7 @@ void set_motor_dir(bool is_right, int dir, bool record=true) {
     } else {
       L_motor->run(dir);
     }
-    if (record) { add_motor_cmd(); }
+    if (state.recording) { add_motor_cmd(); }
   }
 }
 
@@ -42,12 +41,16 @@ void set_motor_dirs(int dir) {
   set_motor_dir(true, dir);
 }
 
-void set_motor_speed(bool is_right, int speed, bool record=true) {
-  speed *= state.speed_coeff;
-  // underdrives right motor to match left motor
-  if (state.motor_dirs[0] == BACKWARD && state.motor_dirs[1] == BACKWARD) {
-    if (is_right) { speed *= 0.95; }
-  } else if (is_right) { speed *= 0.9; }
+void set_motor_speed(bool is_right, int speed, bool raw=false) {
+
+  // if not raw speeds wanted underdrives right motor to match left motor and moderates speed
+  // by speed coefficient
+  if (!raw) {
+    speed *= state.speed_coeff;
+    if (state.motor_dirs[0] == BACKWARD && state.motor_dirs[1] == BACKWARD) {
+      if (is_right) { speed *= 0.95; } // CHECK
+    } else if (is_right) { speed *= 0.9; }
+  }
 
 	if (state.motor_speeds[int(is_right)] != speed) {
     state.motor_speeds[int(is_right)] = speed;
@@ -56,7 +59,7 @@ void set_motor_speed(bool is_right, int speed, bool record=true) {
     } else {
       L_motor -> setSpeed(speed);
     }
-    if (record) { add_motor_cmd(); }
+    if (state.recording) { add_motor_cmd(); }
 	}
 }
 

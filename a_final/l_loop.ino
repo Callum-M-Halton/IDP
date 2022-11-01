@@ -17,7 +17,8 @@ void loop() {
           state.approaching = approachables.block; break;
         case approachables.block_straight:
           if (millis() > state.start_time + 240000) {
-            state.super_timer_end = millis() + TIME_FOR_BLOCK_STRAIGHT; 
+            state.super_timer_end = millis() + TIME_FOR_BLOCK_STRAIGHT;
+            Serial.println("b");
             state.approaching = approachables.straight_before_tunnel; 
           } else {
             state.time_at_start_of_block_straight = millis();
@@ -63,6 +64,7 @@ void loop() {
     // update amber LED
     flash_amber();
   }
+  Serial.println("app: " + String(state.approaching));
   //print_sensor_vals();
   //Serial.println(digitalRead(JUNCT_SENSOR_PIN));
 }

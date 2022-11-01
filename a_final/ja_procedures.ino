@@ -7,34 +7,32 @@ void print_motor_cmds() {
     Serial.println("=========================");
     Serial.println(String(cmd.dirs[0]) + " " + String(cmd.dirs[1]));
     Serial.println(String(cmd.speeds[0]) + " " + String(cmd.speeds[1]));
-    Serial.println(String(cmd.time_stamp) + " " + String(cmd.is_flag));
+    Serial.println(String(cmd.time_stamp));
     Serial.println("=========================");
   }
 }
 
 void reverse_run(bool ignore_sensors=false) {
+  state.recording = false;
   state.time_stamp_of_cmd_being_rev_run = millis();
   state.timer_end = millis();
-  //start_time = millis();
   while (ignore_sensors || !any_front_line_sensors_firing()) {
-    Serial.println("rev");
     if (millis() >= state.timer_end) {
       if (state.motor_cmds.size() == 0) {
-        return;
+        break;
       }
       motor_cmd_struct last_cmd = state.motor_cmds.pop();
-      if (last_cmd.is_flag) { break; }
-      set_motor_dir(false, 3 - last_cmd.dirs[0], false);
-      set_motor_dir(true, 3 - last_cmd.dirs[1], false);
-      set_motor_speed(false, last_cmd.speeds[0], false);
-      set_motor_speed(true, last_cmd.speeds[1], false);
+      set_motor_dir(false, 3 - last_cmd.dirs[0]);
+      set_motor_dir(true, 3 - last_cmd.dirs[1]);
+      set_motor_speed(false, last_cmd.speeds[0], true);
+      set_motor_speed(true, last_cmd.speeds[1], true);
 
       unsigned long timer_length = state.time_stamp_of_cmd_being_rev_run - last_cmd.time_stamp;
-
+/*
       if (last_cmd.dirs[0] == FORWARD && last_cmd.dirs[1] == FORWARD) {
         timer_length += 300;
       }
-      
+*/
       state.timer_end = millis() + timer_length;
       state.time_stamp_of_cmd_being_rev_run = last_cmd.time_stamp;
     } else {
@@ -59,7 +57,7 @@ void go_home() {
 
 void find_block() {
   unsigned long time_spent_on_block_straight = millis() - state.time_at_start_of_block_straight;
-  add_motor_cmd(true);
+  state.recording = true;
   turn_on_spot(false);
   delay(1000);
   set_motor_speeds(0);
@@ -95,11 +93,12 @@ void find_block() {
 
   reverse_run();
   refind_line();
+  Serial.println("a");
   state.approaching = approachables.straight_before_tunnel;
   state.super_timer_end = millis() + (TIME_FOR_BLOCK_STRAIGHT - time_spent_on_block_straight); // TUNE
 }
 
-void next_junct() {
+void next_approaching_after_junct() {
   switch (state.approaching) {
     case approachables.green_junct: state.approaching = approachables.home_junct; break;
     case approachables.home_junct: state.approaching = approachables.red_junct; break;
@@ -109,8 +108,8 @@ void next_junct() {
 
 void deposit_block() {
   Serial.println("Task: Depositing Block");
-  // turn at junct recording intial position
-  add_motor_cmd(true);
+  // start recording moves and turn at junct
+  state.recording = true;
   turn_on_spot(true);
   my_delay(1150);
   // move into box
@@ -131,18 +130,16 @@ void deposit_block() {
   } else {
     // update state of block collection
     state.block = block_types.none;
-    state.blocks_collected++;
+    //state.blocks_collected++;
     // return to initial position and stop
     reverse_run(true);
-    set_motor_speeds(0);
     // drive past junction
     set_motor_dirs(FORWARD);
     set_motor_speeds(255);
     my_delay(1000);
     // return to line
     refind_line();
-    while(1);
-    next_junct();
+    next_approaching_after_junct();
   }
 
 }
@@ -160,7 +157,7 @@ void handle_junct() {
       deposit_block();
     }
   } else {
-    next_junct();
+    next_approaching_after_junct();
   }
 }
 
@@ -233,7 +230,6 @@ void traverse_tunnel() {
     }
   }
   set_motor_speeds(0);
-  while(1);
 
   refind_line();
   if (state.block == block_types.none) {
@@ -249,15 +245,15 @@ void refind_line() {
   Serial.println("Task: Refinding Line");
   unsigned long timer_end = millis() + 300;
   turn_on_spot(true);
-  while(millis() < timer_end && 1/*!any_front_line_sensors_firing()*/) {
+  while(millis() < timer_end && !any_front_line_sensors_firing()) {
     my_milli_delay();
   }
   set_motor_speeds(0);
-  if (0/*any_front_line_sensors_firing()*/) { return; }
+  if (any_front_line_sensors_firing()) { return; }
 
   timer_end = millis() + 600;
   turn_on_spot(false);
-  while(millis() < timer_end && 1/*!any_front_line_sensors_firing()*/) {
+  while(millis() < timer_end && !any_front_line_sensors_firing()) {
     my_milli_delay();
   }
   set_motor_speeds(0);

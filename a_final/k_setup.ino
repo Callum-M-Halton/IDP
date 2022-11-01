@@ -32,11 +32,15 @@ void setup() {
   // robot state config and record start time
   set_motor_speeds(0); /////////
   raise_grabber();
-  my_delay(5000);
+  my_delay(10000);
   state.start_time = millis();
 
   // give the robot it's first task and/or target
-  traverse_tunnel();
+  //traverse_tunnel();
+  
+  lower_grabber();
+  state.approaching = approachables.green_junct;
+  state.block = block_types.mag;
 }
 
   /*if (false) {

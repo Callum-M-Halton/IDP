@@ -18,7 +18,6 @@ struct motor_cmd_struct {
   int dirs[2];
   int speeds[2];
   unsigned long time_stamp;
-  bool is_flag;
 };
 
 struct state_struct {
@@ -31,6 +30,7 @@ struct state_struct {
   int last_side_dist; unsigned long time_at_start_of_block_straight;
 
   LinkedList<motor_cmd_struct> motor_cmds; unsigned long time_stamp_of_cmd_being_rev_run;
+  bool recording;
 };
 state_struct state = {
   {-1, -1}, offset_dirs.none,
@@ -41,7 +41,8 @@ state_struct state = {
   0, 0,
   -1, 0,
 
-  LinkedList<motor_cmd_struct>(), 0
+  LinkedList<motor_cmd_struct>(), 0,
+  false
 };
 
 // ===== STATE GETTERS ======
