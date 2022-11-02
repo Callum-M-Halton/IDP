@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 void loop() {
-  if (true ) {
+  if (true) {
     if (millis() >= state.super_timer_end) {
       switch (state.approaching) {
         case approachables.straight_before_ramp:

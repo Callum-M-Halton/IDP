@@ -7,7 +7,6 @@ void setup() {
     Serial.println("Could not find Motor Shield. Check wiring.");
     while (1);
   }
-
   Serial.println("Motor Shield found.");
   // Make sure we don't start moving prematurely
 
@@ -35,8 +34,14 @@ void setup() {
   // robot state config and delay a little
   set_motor_speeds(0);
   raise_grabber();
-  while (digitalRead(BUTTON_PIN)) {
-    delay(1);
+  int low_count = 0;
+  while (low_count < 20) {
+    if (digitalRead(BUTTON_PIN)) {
+      low_count = 0;
+    } else {
+      low_count++;
+    }
+    my_milli_delay();
   }
 
   // give the robot it's first task
