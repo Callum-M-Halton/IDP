@@ -8,6 +8,7 @@ const byte FRONT_TRIG_PIN = 4;
 const byte FRONT_ECHO_PIN = 5;
 const byte SIDE_TRIG_PIN = 6;
 const byte SIDE_ECHO_PIN = 7;
+const byte BUTTON_PIN = 8;
 const byte SERVO_PIN = 9; //has to go in 9 or 10 (servo specific pins)
 const byte GREEN_LED_PIN = 11;
 const byte RED_LED_PIN = 12;

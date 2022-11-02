@@ -102,7 +102,7 @@ bool test_if_magnetic() {
     my_delay(5000);
     digitalWrite(GREEN_LED_PIN, LOW);
     //box is not magnetic
-    return true;
+    return false;
   }
 }
 

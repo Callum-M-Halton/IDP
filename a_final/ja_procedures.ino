@@ -58,13 +58,20 @@ void go_home() {
 
 void go_home_from_red_box() {
   turn_on_spot(true);
-  delay(1100); //TUNE
+  my_delay(1025); //TUNE
   set_motor_dirs(FORWARD);
-  delay(1000); //TUNE
+  my_delay(2000); //TUNE
   while (!any_front_line_sensors_firing()) {
     my_milli_delay();
   }
-  delay(1000); //TUNE
+  set_motor_speed(true, 255);
+  set_motor_speed(false, 230);
+  set_motor_speeds(0);
+  //myservo.write(45);
+  turn_on_spot(false);
+  my_delay(250);
+  set_motor_dirs(FORWARD);
+  my_delay(1175);
   set_motor_speeds(0);
   while(1);
 }
@@ -91,7 +98,7 @@ void deposit_block() {
   // move into box
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
-  my_delay(500);
+  my_delay(1200);
   // stop and raise grabber
   set_motor_speeds(0);
   raise_grabber();
@@ -198,7 +205,7 @@ void traverse_tunnel() {
 void refind_line() {
   Serial.println("Task: Refinding Line");
   set_motor_speeds(0);
-  unsigned long timer_end = millis() + 400;
+  unsigned long timer_end = millis() + 600;
   turn_on_spot(true);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
     my_milli_delay();
@@ -206,7 +213,7 @@ void refind_line() {
   set_motor_speeds(0);
   if (any_front_line_sensors_firing()) { return; }
 
-  timer_end = millis() + 800;
+  timer_end = millis() + 1000;
   turn_on_spot(false);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
     my_milli_delay();

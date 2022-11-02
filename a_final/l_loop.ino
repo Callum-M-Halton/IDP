@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 void loop() {
-  if (true) {
+  if (true ) {
     if (millis() >= state.super_timer_end) {
       switch (state.approaching) {
         case approachables.straight_before_ramp:
@@ -39,6 +39,7 @@ void loop() {
     // update amber LED
     flash_amber();
   }
+  //Serial.println(digitalRead(BUTTON_PIN));
   //print_sensor_vals();
   //Serial.println(digitalRead(JUNCT_SENSOR_PIN));
 }
