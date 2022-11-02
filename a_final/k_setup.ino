@@ -16,7 +16,7 @@ void setup() {
   pinMode(FRONT_TRIG_PIN, OUTPUT); pinMode(SIDE_TRIG_PIN, OUTPUT);
   pinMode(FRONT_ECHO_PIN, INPUT); pinMode(SIDE_ECHO_PIN, INPUT);
   // Setup hall sensor
-  pinMode(HALL_SENSOR_PIN, OUTPUT);
+  pinMode(HALL_SENSOR_PIN, INPUT);
 
   // Setting the IR sensor pins as inputs
   pinMode(front_sensor_pins.left, INPUT);
@@ -29,19 +29,24 @@ void setup() {
   pinMode(RED_LED_PIN, OUTPUT);
   pinMode(GREEN_LED_PIN, OUTPUT);
  
-  // robot state config and record start time
-  set_motor_speeds(0); /////////
+  // robot state config and delay a little
+  set_motor_speeds(0);
   raise_grabber();
   my_delay(10000);
-  state.start_time = millis();
 
-  // give the robot it's first task and/or target
-  //traverse_tunnel();
-  
+  // give the robot it's first task
+  //leave_start();
+  lower_grabber();
+  state.approaching = approachables.red_junct;
+  state.block = block_types.mag;
+  /*
   lower_grabber();
   state.approaching = approachables.green_junct;
-  state.block = block_types.mag;
+  state.block = block_types.non_mag;
+  */
 }
+
+  //state.start_time = millis();
 
   /*if (false) {
     turn_on_spot(false);

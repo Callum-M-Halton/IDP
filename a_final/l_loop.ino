@@ -5,27 +5,16 @@ void loop() {
     if (millis() >= state.super_timer_end) {
       switch (state.approaching) {
         case approachables.straight_before_ramp:
-          //
-          lower_grabber();
           state.approaching == approachables.ramp;
         break;
         case approachables.straight_before_tunnel:
-          //
-          myservo.write(20);
           state.approaching = approachables.tunnel; break;
         case approachables.straight_before_block:
           state.approaching = approachables.block; break;
-        case approachables.block_straight:
-          if (millis() > state.start_time + 240000) {
-            state.super_timer_end = millis() + TIME_FOR_BLOCK_STRAIGHT;
-            Serial.println("b");
-            state.approaching = approachables.straight_before_tunnel; 
-          } else {
-            state.time_at_start_of_block_straight = millis();
-            state.approaching = approachables.block_to_left;           
-          }
-        break;
         case approachables.straight_before_juncts:
+          //
+          /*set_motor_speeds(0);
+          while(1);*/
           state.approaching = approachables.green_junct; break;
       }
     }
@@ -41,10 +30,32 @@ void loop() {
       int dist_to_block = get_ultrasonic_distance(true);
       if (dist_to_block <= 10) {
         aquire_block();
-      } /*else if (dist_to_block < 10) {
-        state.speed_coeff = BOX_APPROACH_COEFF;
-      }*/
-    } else if (state.approaching == approachables.block_to_left) {
+      }
+    }
+
+    // line following
+    follow_line_step();
+
+    // update amber LED
+    flash_amber();
+  }
+  //print_sensor_vals();
+  //Serial.println(digitalRead(JUNCT_SENSOR_PIN));
+}
+
+/*
+        case approachables.block_straight:
+          if (millis() > state.start_time + 240000) {
+            state.super_timer_end = millis() + TIME_FOR_BLOCK_STRAIGHT;
+            state.approaching = approachables.straight_before_tunnel; 
+          } else {
+            state.time_at_start_of_block_straight = millis();
+            state.approaching = approachables.block_to_left;           
+          }
+        break;
+*/
+
+/*else if (state.approaching == approachables.block_to_left) {
       int dist = get_ultrasonic_distance(false);
       if (state.last_side_dist != -1) {
         if (state.last_side_dist - dist > 10) { //TUNE/measure
@@ -56,18 +67,7 @@ void loop() {
         }
       }
       state.last_side_dist = dist;
-    }
-
-    // line following 
-    follow_line_step();
-
-    // update amber LED
-    flash_amber();
-  }
-  Serial.println("app: " + String(state.approaching));
-  //print_sensor_vals();
-  //Serial.println(digitalRead(JUNCT_SENSOR_PIN));
-}
+    }*/
 
     /*
     state.cycle_num += 1;

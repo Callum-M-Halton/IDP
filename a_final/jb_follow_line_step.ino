@@ -1,19 +1,17 @@
 #include <Arduino.h>
-
+/*
 void handle_EOL() {
   switch (state.approaching) {
     case approachables.ramp: traverse_ramp(); break;
     case approachables.tunnel: traverse_tunnel(); break;
-    /*case approachables.home_box: go_home(); break;
-    default: deposit_block();*/
   }
-}
+}*/
 
 void follow_line_step() {
   int line_end_likelihood = correct_trajectory();
   if (line_end_likelihood != line_end_likelihoods.none) {
-    if (is_approaching_EOL()) {
-      handle_EOL();
+    if (state.approaching == approachables.tunnel) {
+      traverse_tunnel();
     } else if (line_end_likelihood == line_end_likelihoods.as_before) {
       // if the timer is valid (not set to the null state of 0)...
       // ... and it has run out, assume buggy off line

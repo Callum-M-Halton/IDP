@@ -24,10 +24,10 @@ struct state_struct {
   int motor_speeds[2]; int offset_dir;
   int offset_ext; int approaching;
   unsigned long timer_end; int motor_dirs[2];
-  float speed_coeff; int junct_sensor_val;
+  int junct_sensor_val;
   unsigned long super_timer_end; int block;
-  int blocks_collected; unsigned long start_time;
-  int last_side_dist; unsigned long time_at_start_of_block_straight;
+  //int blocks_collected; unsigned long start_time;
+  //int last_side_dist; unsigned long time_at_start_of_block_straight;
 
   LinkedList<motor_cmd_struct> motor_cmds; unsigned long time_stamp_of_cmd_being_rev_run;
   bool recording;
@@ -36,10 +36,10 @@ state_struct state = {
   {-1, -1}, offset_dirs.none,
   offset_exts.none, approachables.nothing,
   0, {-1, -1},
-  1.0, 0,
+  0,
   0, block_types.none,
-  0, 0,
-  -1, 0,
+  //0, 0,
+  //-1, 0,
 
   LinkedList<motor_cmd_struct>(), 0,
   false
@@ -51,15 +51,14 @@ bool is_approaching_junct() {
     || state.approaching == approachables.green_junct
     || state.approaching == approachables.home_junct;
 }
+// ++++++++++++++++++++++++++
 
+/*
 bool is_approaching_EOL() {
   return state.approaching == approachables.tunnel
-    // || state.approaching == approachables.red_box
-    // || state.approaching == approachables.green_box
-    // || state.approaching == approachables.home_box
     || state.approaching == approachables.ramp;
 }
-// ++++++++++++++++++++++++++
+*/
 
 /*
   

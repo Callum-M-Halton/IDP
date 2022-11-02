@@ -9,25 +9,24 @@ const byte FRONT_ECHO_PIN = 5;
 const byte SIDE_TRIG_PIN = 6;
 const byte SIDE_ECHO_PIN = 7;
 const byte SERVO_PIN = 9; //has to go in 9 or 10 (servo specific pins)
-const byte AMBER_LED_PIN = 12; // SET
-const int HALL_SENSOR_PIN = A1;
-const byte GREEN_LED_PIN = 10;
-const byte RED_LED_PIN = 11;
+const byte GREEN_LED_PIN = 11;
+const byte RED_LED_PIN = 12;
+const byte AMBER_LED_PIN = 13;
+const int HALL_SENSOR_PIN = A0;
 // const byte ERROR_LED_PIN = 4;
 
 // other
-const int DROP_GRABBER_VALUE = 10; //TUNE
-const int RAISE_GRABBER_VALUE = 70; //TUNE
+const int DROP_GRABBER_VALUE = 10;
+const int RAISE_GRABBER_VALUE = 70;
 struct speeds_struct {int tiny; int low; int med; int high; int tunnel;};
 speeds_struct speeds = {0, 50, 150, 255};
-const float BOX_APPROACH_COEFF = 0.8; // MAYBE TUNE?
 const int MOTOR_CMDS_SIZE = 100;
 const bool GO_VIA_RAMP = false;
-const int DELTA_DIST_FOR_LOST_BLOCK = 5;
-const int HALL_SENSOR_THRESHOLD = 888; // MAYBE TUNE?
-const int HALL_EFFECT_SAMPLE_LENGTH = 5; // MAYBE TUNE?
+const int HALL_SENSOR_THRESHOLD = 500; // MAYBE TUNE?
+const int HALL_EFFECT_SAMPLE_LENGTH = 10; // MAYBE TUNE?
 const int TIME_FOR_BLOCK_STRAIGHT = 10000; //TUNE
 
+// const int DELTA_DIST_FOR_LOST_BLOCK = 5;
 // const int TURN_DISPARITIES_SAMPLE_LENGTH = 100; //TUNE
 // const int DISPARITY_SAMPLE_PERIOD = 20;
 // const int CURVING_LEFT_THRESHOLD = 0; //TUNE

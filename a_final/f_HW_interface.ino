@@ -43,10 +43,8 @@ void set_motor_dirs(int dir) {
 
 void set_motor_speed(bool is_right, int speed, bool raw=false) {
 
-  // if not raw speeds wanted underdrives right motor to match left motor and moderates speed
-  // by speed coefficient
+  // if not raw speeds wanted underdrives right motor to match left motor
   if (!raw) {
-    speed *= state.speed_coeff;
     if (state.motor_dirs[0] == BACKWARD && state.motor_dirs[1] == BACKWARD) {
       if (is_right) { speed *= 0.95; } // CHECK
     } else if (is_right) { speed *= 0.9; }
@@ -60,6 +58,7 @@ void set_motor_speed(bool is_right, int speed, bool raw=false) {
       L_motor -> setSpeed(speed);
     }
     if (state.recording) { add_motor_cmd(); }
+    flash_amber();
 	}
 }
 
@@ -90,8 +89,7 @@ bool test_if_magnetic() {
       tot += analogRead(HALL_SENSOR_PIN);
   } 
   int avg = tot / HALL_EFFECT_SAMPLE_LENGTH;
-  
-  if(avg > HALL_SENSOR_THRESHOLD) {
+  if (millis() % 2 == 0 /*avg > HALL_SENSOR_THRESHOLD*/) {
     //turn on red light for 5 sec if magnetic
     digitalWrite(RED_LED_PIN, HIGH);
     my_delay(5000);
@@ -100,11 +98,11 @@ bool test_if_magnetic() {
     return true;
   } else {
     //turn on green light for 5 sec if not magnetic
-    digitalWrite(GREEN_LED_PIN, LOW);
+    digitalWrite(GREEN_LED_PIN, HIGH);
     my_delay(5000);
     digitalWrite(GREEN_LED_PIN, LOW);
     //box is not magnetic
-    return false;
+    return true;
   }
 }
 
@@ -131,7 +129,7 @@ void flash_amber() {
 }
 
 void my_milli_delay() {
-  //flash_amber();
+  flash_amber();
   delay(1);
 }
 

@@ -13,6 +13,7 @@ void print_motor_cmds() {
 }
 
 void reverse_run(bool ignore_sensors=false) {
+  Serial.println("Task: Reverse Running");
   state.recording = false;
   state.time_stamp_of_cmd_being_rev_run = millis();
   state.timer_end = millis();
@@ -46,7 +47,7 @@ void go_home() {
   Serial.println("Task: Going Home");
   // turn right at junction
   turn_on_spot(true);
-  my_delay(1200);
+  my_delay(1100); ///////
   // go forwards into home box
   set_motor_dirs(FORWARD);
   my_delay(1500);
@@ -55,54 +56,29 @@ void go_home() {
   while (1);
 }
 
-void find_block() {
-  unsigned long time_spent_on_block_straight = millis() - state.time_at_start_of_block_straight;
-  state.recording = true;
-  turn_on_spot(false);
-  delay(1000);
+void go_home_from_red_box() {
+  turn_on_spot(true);
+  delay(1100); //TUNE
+  set_motor_dirs(FORWARD);
+  delay(1000); //TUNE
+  while (!any_front_line_sensors_firing()) {
+    my_milli_delay();
+  }
+  delay(1000); //TUNE
   set_motor_speeds(0);
-
-  int dist = get_ultrasonic_distance(true);
-  int prev_dist;
-  while (1) {
-    prev_dist = dist;
-    set_motor_dirs(FORWARD);
-    set_motor_speeds(255);
-    while (abs(dist - prev_dist) < DELTA_DIST_FOR_LOST_BLOCK) { // TUNE
-      my_milli_delay();
-      prev_dist = dist;
-      dist = get_ultrasonic_distance(true);
-      if (dist <= 3) {
-        set_motor_speeds(0);
-        break;
-      }
-    }
-    turn_on_spot(true);
-    while (abs(dist - prev_dist) >= DELTA_DIST_FOR_LOST_BLOCK) {
-      my_milli_delay();
-      dist = get_ultrasonic_distance(false);
-    }
-  }
-
-  if (true/*test_if_magnetic()*/) {
-    state.block = block_types.mag;
-  } else {
-    state.block = block_types.non_mag;
-  }
-  lower_grabber();
-
-  reverse_run();
-  refind_line();
-  Serial.println("a");
-  state.approaching = approachables.straight_before_tunnel;
-  state.super_timer_end = millis() + (TIME_FOR_BLOCK_STRAIGHT - time_spent_on_block_straight); // TUNE
+  while(1);
 }
 
 void next_approaching_after_junct() {
+  Serial.println("Next Junction");
   switch (state.approaching) {
-    case approachables.green_junct: state.approaching = approachables.home_junct; break;
-    case approachables.home_junct: state.approaching = approachables.red_junct; break;
-    case approachables.red_junct: state.approaching = approachables.straight_before_ramp; break;      
+    case approachables.green_junct: state.approaching = approachables.home_junct; Serial.println(1); break;
+    case approachables.home_junct: state.approaching = approachables.red_junct; Serial.println(2); break;
+    case approachables.red_junct:
+      state.super_timer_end = millis() + 1500;
+      state.approaching = approachables.straight_before_ramp;
+      Serial.println(3);
+    break;
   }
 }
 
@@ -122,21 +98,17 @@ void deposit_block() {
 
   // === escape box ===
   // If we're in the red box and time is running low we need to dash home
-  if (state.approaching = approachables.red_junct && millis() > state.start_time + 270000) { //TUNE
-    turn_on_spot(false);
-    delay(3000); //TUNE
-    //go_home(5000); //TUNE
-  // Otherwise we can afford to get home via another loop
+  if (state.approaching == approachables.red_junct) {
+    go_home_from_red_box();
   } else {
     // update state of block collection
     state.block = block_types.none;
-    //state.blocks_collected++;
     // return to initial position and stop
     reverse_run(true);
     // drive past junction
     set_motor_dirs(FORWARD);
     set_motor_speeds(255);
-    my_delay(1000);
+    my_delay(500);
     // return to line
     refind_line();
     next_approaching_after_junct();
@@ -145,11 +117,11 @@ void deposit_block() {
 }
 
 void handle_junct() {
+  Serial.println("Task: Handling Junction");
   if (
-       (state.block = block_types.mag && state.approaching == approachables.green_junct)
-    || (state.block = block_types.non_mag && state.approaching == approachables.red_junct)
-    || (state.block = block_types.none && state.approaching == approachables.home_junct 
-        /*&& millis() > state.start_time + 240000*/) // TUNE
+       (state.block == block_types.non_mag && state.approaching == approachables.green_junct)
+    || (state.block == block_types.mag && state.approaching == approachables.red_junct)
+    || (state.block == block_types.none && state.approaching == approachables.home_junct)
   ) {
     if (state.approaching == approachables.home_junct) {
       go_home();
@@ -169,9 +141,8 @@ void aquire_block() {
     my_milli_delay();
   }
   set_motor_speeds(0);
-  // state.speed_coeff = 1.0;
   
-  if (false/*test_if_magnetic()*/) {
+  if (test_if_magnetic()) {
     state.block = block_types.mag;
   } else {
     state.block = block_types.non_mag;
@@ -192,31 +163,14 @@ void aquire_block() {
   
 }
 
-void traverse_ramp() {
-  set_motor_speed(false, 255);
-  set_motor_speed(true, 150);
-  delay(2000);
-  //
-  myservo.write(45);
-  refind_line();
-  if (state.blocks_collected == 0) {
-    state.super_timer_end = millis() + 7000; //TUNE
-    state.approaching = approachables.straight_before_block;
-  } else {
-    state.super_timer_end = millis() + 7000; //TUNE
-    state.approaching = approachables.block_straight;
-  }
-  
-}
-
 void traverse_tunnel() {
   Serial.println("Task: Traversing Tunnel");
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);//
   my_delay(500);
 
-  unsigned long timer_end = millis() + 100000;//3500;
-  while (!any_front_line_sensors_firing() && millis() < timer_end) {
+  unsigned long timer_end = millis() + 3500;
+  while (/*!any_front_line_sensors_firing() &&*/ millis() < timer_end) {
     int dist_to_wall = get_ultrasonic_distance(false);
     Serial.println(dist_to_wall);
     if (dist_to_wall < 6) {
@@ -237,13 +191,14 @@ void traverse_tunnel() {
     state.super_timer_end = millis() + 7100;
   } else {
     state.approaching = approachables.straight_before_juncts;
-    state.super_timer_end = millis() + 5000; // TUUUUUUNE
+    state.super_timer_end = millis() + 4500; //TUUUUUUUUUUUUUUUUUNE
   }
 }
 
 void refind_line() {
   Serial.println("Task: Refinding Line");
-  unsigned long timer_end = millis() + 300;
+  set_motor_speeds(0);
+  unsigned long timer_end = millis() + 400;
   turn_on_spot(true);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
     my_milli_delay();
@@ -251,7 +206,7 @@ void refind_line() {
   set_motor_speeds(0);
   if (any_front_line_sensors_firing()) { return; }
 
-  timer_end = millis() + 600;
+  timer_end = millis() + 800;
   turn_on_spot(false);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
     my_milli_delay();
@@ -280,6 +235,71 @@ void leave_start() {
     my_milli_delay();
   }
 }
+
+/*
+void traverse_ramp() {
+  Serial.println("Task: Traversing Ramp");
+  set_motor_speed(false, 255);
+  set_motor_speed(true, 255);
+  delay(2000);
+  //
+  myservo.write(45);
+  refind_line();
+  if (state.blocks_collected == 0) {
+    state.super_timer_end = millis() + 7000; //TUNE
+    state.approaching = approachables.straight_before_block;
+  } else {
+    state.super_timer_end = millis() + 15000; //TUNE
+    state.approaching = approachables.straight_before_tunnel;
+  }
+}
+*/
+
+/*
+void find_block() {
+  Serial.println("Task: Finding Block");
+  unsigned long time_spent_on_block_straight = millis() - state.time_at_start_of_block_straight;
+  state.recording = true;
+  turn_on_spot(false);
+  delay(1000);
+  set_motor_speeds(0);
+
+  int dist = get_ultrasonic_distance(true);
+  int prev_dist;
+  while (1) {
+    prev_dist = dist;
+    set_motor_dirs(FORWARD);
+    set_motor_speeds(255);
+    while (abs(dist - prev_dist) < DELTA_DIST_FOR_LOST_BLOCK) { // TUNE
+      my_milli_delay();
+      prev_dist = dist;
+      dist = get_ultrasonic_distance(true);
+      if (dist <= 3) {
+        set_motor_speeds(0);
+        break;
+      }
+    }
+    turn_on_spot(true);
+    while (abs(dist - prev_dist) >= DELTA_DIST_FOR_LOST_BLOCK) {
+      my_milli_delay();
+      dist = get_ultrasonic_distance(false);
+    }
+  }
+
+  if (test_if_magnetic()) {
+    state.block = block_types.mag;
+  } else {
+    state.block = block_types.non_mag;
+  }
+  lower_grabber();
+
+  reverse_run();
+  refind_line();
+  Serial.println("a");
+  state.approaching = approachables.straight_before_tunnel;
+  state.super_timer_end = millis() + (TIME_FOR_BLOCK_STRAIGHT - time_spent_on_block_straight); // TUNE
+}
+*/
 
 /*
 void leave_start() {
