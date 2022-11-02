@@ -23,8 +23,8 @@ void loop() {
         case approachables.straight_before_block:
           state.approaching = approachables.block; break;
         case approachables.straight_before_juncts:
-          set_motor_speeds(0);
-          while(1);
+//          set_motor_speeds(0);
+//          while(1);
           state.approaching = approachables.green_junct; break;
       }
     }
