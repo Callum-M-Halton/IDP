@@ -4,17 +4,27 @@ void loop() {
   if (true) {
     if (millis() >= state.super_timer_end) {
       switch (state.approaching) {
+        case approachables.just_before_home_junct:
+          state.approaching = approachables.home_junct; break;
+        case approachables.straight_before_home_junct:
+          turn_on_spot(true);
+          my_delay(2000);
+          while (!any_front_line_sensors_firing()){
+            my_milli_delay();
+          }
+          set_motor_dirs(0);
+          state.super_timer_end = millis() + 1500;
+          state.approaching = approachables.just_before_home_junct;
+          break;
         case approachables.straight_before_ramp:
-          state.approaching == approachables.ramp;
-        break;
+          state.approaching == approachables.ramp; break;
         case approachables.straight_before_tunnel:
           state.approaching = approachables.tunnel; break;
         case approachables.straight_before_block:
           state.approaching = approachables.block; break;
         case approachables.straight_before_juncts:
-          //
-          /*set_motor_speeds(0);
-          while(1);*/
+          set_motor_speeds(0);
+          while(1);
           state.approaching = approachables.green_junct; break;
       }
     }

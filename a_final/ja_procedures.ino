@@ -47,15 +47,16 @@ void go_home() {
   Serial.println("Task: Going Home");
   // turn right at junction
   turn_on_spot(true);
-  my_delay(1100); ///////
+  my_delay(1200); ///////
   // go forwards into home box
   set_motor_dirs(FORWARD);
-  my_delay(1500);
+  my_delay(1300);
   // stop
   set_motor_speeds(0);
   while (1);
 }
 
+/*
 void go_home_from_red_box() {
   turn_on_spot(true);
   my_delay(1025); //TUNE
@@ -74,6 +75,21 @@ void go_home_from_red_box() {
   my_delay(1175);
   set_motor_speeds(0);
   while(1);
+}
+*/
+
+void go_home_from_red_box() {
+  state.block = block_types.none;
+  // return to initial position and stop
+  reverse_run(true);
+
+  turn_on_spot(false);
+  my_delay(2000);
+  while (!any_front_line_sensors_firing()){
+    my_milli_delay();
+  }
+  state.approaching = approachables.straight_before_home_junct;
+  state.super_timer_end = millis() + 7000; // TUNE
 }
 
 void next_approaching_after_junct() {
@@ -198,7 +214,7 @@ void traverse_tunnel() {
     state.super_timer_end = millis() + 7100;
   } else {
     state.approaching = approachables.straight_before_juncts;
-    state.super_timer_end = millis() + 4500; //TUUUUUUUUUUUUUUUUUNE
+    state.super_timer_end = millis() + 4500; //tune
   }
 }
 

@@ -35,7 +35,7 @@ void setup() {
   set_motor_speeds(0);
   raise_grabber();
   int low_count = 0;
-  while (low_count < 20) {
+  while (low_count < 30) {
     if (digitalRead(BUTTON_PIN)) {
       low_count = 0;
     } else {
@@ -46,10 +46,11 @@ void setup() {
 
   // give the robot it's first task
   leave_start();
+
   /*
   lower_grabber();
-  state.approaching = approachables.red_junct;
-  state.block = block_types.mag;
+  state.approaching = approachables.home_junct;
+  state.block = block_types.none;
   
   lower_grabber();
   state.approaching = approachables.green_junct;
