@@ -11,9 +11,8 @@ int correct_trajectory() {
   if (sensors[0]) {
     if (sensors[1]) {
       if (sensors[2]) {
-        // case [1, 1, 1]
-        // ERROR
-        //Serial.println("error: [1, 1, 1]");
+        // INVALID CASE [1, 1, 1]
+        // Serial.println("Invalid case: [1, 1, 1]");
       } else {
         // case [1, 1, 0]
         state.offset_dir = offset_dirs.right;
@@ -23,9 +22,8 @@ int correct_trajectory() {
       }
     } else {
       if (sensors[2]) {
-        // case [1, 0, 1]
-        // ERROR
-        Serial.println("error: [1, 0, 1]");
+        // INVALID CASE [1, 0, 1]
+        // Serial.println("Invalid case: [1, 0, 1]");
       } else {
         // case [1, 0, 0]
         state.offset_dir = offset_dirs.right;

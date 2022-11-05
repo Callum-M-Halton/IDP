@@ -7,6 +7,7 @@ bool any_front_line_sensors_firing() {
 }
 
 void print_sensor_vals() {
+  Serial.print("\nFront Line Sensor Values: ")
   Serial.print(digitalRead(front_sensor_pins.left));
   Serial.print(digitalRead(front_sensor_pins.mid));
   Serial.println(digitalRead(front_sensor_pins.right));
@@ -141,7 +142,6 @@ void my_delay(int delay) {
 }
 
 int get_ultrasonic_distance(bool is_front) {
-  // Clears the TRIG_PIN condition
   int trig_pin;
   int echo_pin;
   if (is_front) {
@@ -151,6 +151,7 @@ int get_ultrasonic_distance(bool is_front) {
     trig_pin = SIDE_TRIG_PIN;
     echo_pin = SIDE_ECHO_PIN;
   }
+    // Clears the trig_pin
   digitalWrite(trig_pin, LOW);
   delayMicroseconds(2);
   // Sets the trig_pin HIGH (ACTIVE) for 10 microseconds
@@ -162,6 +163,6 @@ int get_ultrasonic_distance(bool is_front) {
   // Calculating the distance
   int distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
   // Displays the distance on the Serial Monitor
-  Serial.println(String(distance));
+  Serial.println("Distance Read: " + String(distance));
   return distance;
 }

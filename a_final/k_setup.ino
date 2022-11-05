@@ -31,9 +31,12 @@ void setup() {
   pinMode(RED_LED_PIN, OUTPUT);
   pinMode(GREEN_LED_PIN, OUTPUT);
  
-  // robot state config and delay a little
+  // final hardware config 
   set_motor_speeds(0);
   raise_grabber();
+  Serial.println("Hardware fully configured for start");
+
+  // Wait till button pressed
   int low_count = 0;
   while (low_count < 30) {
     if (digitalRead(BUTTON_PIN)) {
@@ -43,6 +46,7 @@ void setup() {
     }
     my_milli_delay();
   }
+  Serial.println("Button Pressed, starting loop")
 
   // give the robot it's first task
   leave_start();
@@ -50,11 +54,11 @@ void setup() {
   /*
   lower_grabber();
   state.approaching = approachables.home_junct;
-  state.block = block_types.none;
+  state.block_type = block_types.none;
   
   lower_grabber();
   state.approaching = approachables.green_junct;
-  state.block = block_types.non_mag;
+  state.block_type = block_types.non_mag;
   
   refind_line();
   while(1);

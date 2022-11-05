@@ -1,17 +1,18 @@
 #include <Arduino.h>
 
 // ==== OTHER ENUMS ====
-struct offset_dirs_struct {int none; int left; int right; int unknown;};
-offset_dirs_struct offset_dirs = {0,1,2,3};
+struct offset_dirs_struct {
+  const int none; const int left; const int right; const int unknown;
+};
+constexpr offset_dirs_struct offset_dirs = {0,1,2,3};
 
 struct offset_exts_struct {
   const int none; const int little; const int mid; const int far;
 };
 constexpr offset_exts_struct offset_exts = {0,1,2,3};
 
-struct block_types_struct { int none; int mag; int non_mag; };
-block_types_struct block_types = {0,1,2};
-
+struct block_types_struct {const int none; const int mag; const int non_mag;};
+constexpr block_types_struct block_types = {0,1,2};
 // ++++++++++++++++++++
 
 struct motor_cmd_struct {
@@ -25,7 +26,7 @@ struct state_struct {
   int offset_ext; int approaching;
   unsigned long timer_end; int motor_dirs[2];
   int junct_sensor_val;
-  unsigned long super_timer_end; int block;
+  unsigned long super_timer_end; int block_type;
   //int blocks_collected; unsigned long start_time;
   //int last_side_dist; unsigned long time_at_start_of_block_straight;
 
@@ -52,6 +53,12 @@ bool is_approaching_junct() {
     || state.approaching == approachables.home_junct;
 }
 // ++++++++++++++++++++++++++
+
+// ====== STATE SETTERS ======
+void start_super_timer(int ST_length) {
+  state.super_timer_end = millis() + ST_length;
+}
+// +++++++++++++++++++++++++++
 
 /*
 bool is_approaching_EOL() {

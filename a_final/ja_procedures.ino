@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-
+// (For testing recording of motor cmds)
 void print_motor_cmds() {
   for (int i = 0; i < state.motor_cmds.size(); i++) {
     motor_cmd_struct cmd = state.motor_cmds.get(i);
@@ -29,11 +29,7 @@ void reverse_run(bool ignore_sensors=false) {
       set_motor_speed(true, last_cmd.speeds[1], true);
 
       unsigned long timer_length = state.time_stamp_of_cmd_being_rev_run - last_cmd.time_stamp;
-/*
-      if (last_cmd.dirs[0] == FORWARD && last_cmd.dirs[1] == FORWARD) {
-        timer_length += 300;
-      }
-*/
+
       state.timer_end = millis() + timer_length;
       state.time_stamp_of_cmd_being_rev_run = last_cmd.time_stamp;
     } else {
@@ -78,8 +74,19 @@ void go_home_from_red_box() {
 }
 */
 
+void turn_around_and_go_home() {
+  turn_on_spot(true);
+  my_delay(2000);
+  while (!any_front_line_sensors_firing()){
+    my_milli_delay();
+  }
+  set_motor_dirs(0);
+  start_super_timer(ST_lengths.just_after_green_junct_to_just_before_home_junct);
+  state.approaching = approachables.just_before_home_junct;
+}
+
 void go_home_from_red_box() {
-  state.block = block_types.none;
+  state.block_type = block_types.none;
   // return to initial position and stop
   reverse_run(true);
 
@@ -88,19 +95,19 @@ void go_home_from_red_box() {
   while (!any_front_line_sensors_firing()){
     my_milli_delay();
   }
-  state.approaching = approachables.straight_before_home_junct;
-  state.super_timer_end = millis() + 7000; // TUNE
+  state.approaching = approachables.just_before_green_junct;
+  start_super_timer(ST_lengths.red_junct_to_just_before_green_junct);
 }
 
 void next_approaching_after_junct() {
-  Serial.println("Next Junction");
+  Serial.println("Task: Setting the junction now being approached");
   switch (state.approaching) {
-    case approachables.green_junct: state.approaching = approachables.home_junct; Serial.println(1); break;
-    case approachables.home_junct: state.approaching = approachables.red_junct; Serial.println(2); break;
+    case approachables.green_junct: state.approaching = approachables.home_junct; break;
+    case approachables.home_junct: state.approaching = approachables.red_junct; break;
+    // Never used as for going via ramp case
     case approachables.red_junct:
-      state.super_timer_end = millis() + 1500;
+      start_super_timer(ST_lengths.red_junct_to_straight_before_ramp);
       state.approaching = approachables.straight_before_ramp;
-      Serial.println(3);
     break;
   }
 }
@@ -125,7 +132,7 @@ void deposit_block() {
     go_home_from_red_box();
   } else {
     // update state of block collection
-    state.block = block_types.none;
+    state.block_type = block_types.none;
     // return to initial position and stop
     reverse_run(true);
     // drive past junction
@@ -142,9 +149,9 @@ void deposit_block() {
 void handle_junct() {
   Serial.println("Task: Handling Junction");
   if (
-       (state.block == block_types.non_mag && state.approaching == approachables.green_junct)
-    || (state.block == block_types.mag && state.approaching == approachables.red_junct)
-    || (state.block == block_types.none && state.approaching == approachables.home_junct)
+       (state.block_type == block_types.non_mag && state.approaching == approachables.green_junct)
+    || (state.block_type == block_types.mag && state.approaching == approachables.red_junct)
+    || (state.block_type == block_types.none && state.approaching == approachables.home_junct)
   ) {
     if (state.approaching == approachables.home_junct) {
       go_home();
@@ -166,21 +173,21 @@ void aquire_block() {
   set_motor_speeds(0);
   
   if (test_if_magnetic()) {
-    state.block = block_types.mag;
+    state.block_type = block_types.mag;
   } else {
-    state.block = block_types.non_mag;
+    state.block_type = block_types.non_mag;
   }
   lower_grabber();
 
   if (GO_VIA_RAMP) {
-    state.super_timer_end = millis() + 7000; // TUNE
+    start_super_timer(ST_lengths.block_aquired_to_straight_before_tunnel);
   } else {
     turn_on_spot(true);
     my_delay(2000);
     while (!any_front_line_sensors_firing()){
       my_milli_delay();
     }
-    state.super_timer_end = millis() + 6500; // TUNE
+    start_super_timer(ST_lengths.turned_180_to_straight_before_tunnel);
   }
   state.approaching = approachables.straight_before_tunnel;
   
@@ -189,13 +196,12 @@ void aquire_block() {
 void traverse_tunnel() {
   Serial.println("Task: Traversing Tunnel");
   set_motor_dirs(FORWARD);
-  set_motor_speeds(255);//
+  set_motor_speeds(255);
   my_delay(500);
 
   unsigned long timer_end = millis() + 3500;
-  while (/*!any_front_line_sensors_firing() &&*/ millis() < timer_end) {
+  while (!any_front_line_sensors_firing() && millis() < timer_end) {
     int dist_to_wall = get_ultrasonic_distance(false);
-    Serial.println(dist_to_wall);
     if (dist_to_wall < 6) {
       set_motor_speed(false, 255);
       set_motor_speed(true, 220);
@@ -209,12 +215,12 @@ void traverse_tunnel() {
   set_motor_speeds(0);
 
   refind_line();
-  if (state.block == block_types.none) {
+  if (state.block_type == block_types.none) {
     state.approaching = approachables.straight_before_block;
-    state.super_timer_end = millis() + 7100;
+    start_super_timer(ST_lengths.tunnel_end_to_straight_before_block);
   } else {
     state.approaching = approachables.straight_before_juncts;
-    state.super_timer_end = millis() + 4500; //tune
+    start_super_timer(ST_lengths.tunnel_end_to_straight_before_juncts);
   }
 }
 
@@ -240,10 +246,10 @@ void refind_line() {
 void leave_start() {
   Serial.println("Task: Leaving Start Box");
   if (GO_VIA_RAMP) {
-    state.super_timer_end = millis() + 9300; // TUNE
+    start_super_timer(ST_lengths.start_to_straight_before_ramp); // TUNE
     state.approaching = approachables.straight_before_ramp;
   } else {
-    state.super_timer_end = millis() + 9300;
+    start_super_timer(ST_lengths.start_to_straight_before_tunnel);
     state.approaching = approachables.straight_before_tunnel;
   }
   //rotate slightly to hit line at angle
@@ -269,10 +275,10 @@ void traverse_ramp() {
   myservo.write(45);
   refind_line();
   if (state.blocks_collected == 0) {
-    state.super_timer_end = millis() + 7000; //TUNE
+    start_super_timer(ST_lengths.7000; //TUNE
     state.approaching = approachables.straight_before_block;
   } else {
-    state.super_timer_end = millis() + 15000; //TUNE
+    start_super_timer(ST_lengths.15000; //TUNE
     state.approaching = approachables.straight_before_tunnel;
   }
 }
@@ -310,9 +316,9 @@ void find_block() {
   }
 
   if (test_if_magnetic()) {
-    state.block = block_types.mag;
+    state.block_type = block_types.mag;
   } else {
-    state.block = block_types.non_mag;
+    state.block_type = block_types.non_mag;
   }
   lower_grabber();
 
@@ -320,7 +326,7 @@ void find_block() {
   refind_line();
   Serial.println("a");
   state.approaching = approachables.straight_before_tunnel;
-  state.super_timer_end = millis() + (TIME_FOR_BLOCK_STRAIGHT - time_spent_on_block_straight); // TUNE
+  start_super_timer(ST_lengths.(TIME_FOR_BLOCK_STRAIGHT - time_spent_on_block_straight); // TUNE
 }
 */
 
