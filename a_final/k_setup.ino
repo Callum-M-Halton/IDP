@@ -46,7 +46,7 @@ void setup() {
     }
     my_milli_delay();
   }
-  Serial.println("Button Pressed, starting loop")
+  Serial.println("Button Pressed, starting loop");
 
   // give the robot it's first task
   leave_start();

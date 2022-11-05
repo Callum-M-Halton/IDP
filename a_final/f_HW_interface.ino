@@ -7,7 +7,7 @@ bool any_front_line_sensors_firing() {
 }
 
 void print_sensor_vals() {
-  Serial.print("\nFront Line Sensor Values: ")
+  Serial.print("\nFront Line Sensor Values: ");
   Serial.print(digitalRead(front_sensor_pins.left));
   Serial.print(digitalRead(front_sensor_pins.mid));
   Serial.println(digitalRead(front_sensor_pins.right));
