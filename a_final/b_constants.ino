@@ -22,6 +22,7 @@ const int MOTOR_CMDS_SIZE = 100;
 const bool GO_VIA_RAMP = false;
 const int HALL_SENSOR_THRESHOLD = 500; // MAYBE TUNE?
 const int HALL_EFFECT_SAMPLE_LENGTH = 10; // MAYBE TUNE?
+const int LOST_LINE_TIMER_LENGTH = 500;
 
 struct speeds_struct {
     const int tiny; const int low; const int med; const int high;
