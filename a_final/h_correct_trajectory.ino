@@ -16,7 +16,7 @@ int correct_trajectory() {
       } else {
         // case [1, 1, 0]
         state.offset_dir = offset_dirs.right;
-        state.offset_ext = offset_exts.little;
+        state.offset_ext = offset_exts.moderate;
 		    set_motor_speed(false, speeds.med);
         set_motor_speed(true, speeds.high);
       }
@@ -27,7 +27,7 @@ int correct_trajectory() {
       } else {
         // case [1, 0, 0]
         state.offset_dir = offset_dirs.right;
-        state.offset_ext = offset_exts.mid;
+        state.offset_ext = offset_exts.moderate;
 		    set_motor_speed(false, speeds.low);
         set_motor_speed(true, speeds.high);
       }
@@ -37,7 +37,7 @@ int correct_trajectory() {
       if (sensors[2]) {
         // case [0, 1, 1]
         state.offset_dir = offset_dirs.left;
-        state.offset_ext = offset_exts.little;
+        state.offset_ext = offset_exts.moderate;
 		    set_motor_speed(true, speeds.med);
         set_motor_speed(false, speeds.high);
       } else {
@@ -51,13 +51,13 @@ int correct_trajectory() {
       if (sensors[2]) {
         // case [0, 0, 1]
         state.offset_dir = offset_dirs.left;
-        state.offset_ext = offset_exts.mid;
+        state.offset_ext = offset_exts.moderate;
 		    set_motor_speed(true, speeds.low);
         set_motor_speed(false, speeds.high);
       } else {
         // case [0, 0, 0]
         // Don't do anything if already off the line in the last correction
-        if (state.offset_ext == offset_exts.far) {
+        if (state.offset_ext == offset_exts.large) {
           line_end_likelihood = line_end_likelihoods.as_before;
         } else {
           // decide how to change motor speeds
@@ -75,7 +75,7 @@ int correct_trajectory() {
             line_end_likelihood = line_end_likelihoods.low;
           }
           // set new offset extent
-          state.offset_ext = offset_exts.far;
+          state.offset_ext = offset_exts.large;
         }
       }
     }

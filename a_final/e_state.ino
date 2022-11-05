@@ -7,9 +7,9 @@ struct offset_dirs_struct {
 constexpr offset_dirs_struct offset_dirs = {0,1,2,3};
 
 struct offset_exts_struct {
-  const int none; const int little; const int mid; const int far;
+  const int none; const int moderate; const int large;
 };
-constexpr offset_exts_struct offset_exts = {0,1,2,3};
+constexpr offset_exts_struct offset_exts = {0,1,2};
 
 struct block_types_struct {const int none; const int mag; const int non_mag;};
 constexpr block_types_struct block_types = {0,1,2};
