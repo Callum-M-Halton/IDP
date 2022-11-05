@@ -22,7 +22,7 @@ void follow_line_step() {
     } else if (line_end_likelihood == line_end_likelihoods.high) {
       Serial.println("Starting left line timer");
       // set timer
-      state.timer_end = millis() + 500;
+      state.timer_end = millis() + LOST_LINE_TIMER_LENGTH;
     // Otherwise not [0, 1, 0] to [0, 0, 0]...
     } else {
       // ... so set a timer_end to the null state 0, which will never run out
