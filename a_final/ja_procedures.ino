@@ -86,8 +86,6 @@ void turn_around_and_go_home() {
 }
 
 void start_going_home_from_red_box() {
-  state.block_type = block_types.none;
-
   turn_on_spot(false);
   my_delay(2000);
   while (!any_front_line_sensors_firing()){
@@ -125,14 +123,14 @@ void deposit_block() {
   raise_grabber();
   // return to initial position and stop
   reverse_run();
+  // update state of block
+  state.block_type = block_types.none;
 
   // === escape box ===
   // If we're in the red box and time is running low we need to dash home
   if (state.approaching == approachables.red_junct) {
     start_going_home_from_red_box();
   } else {
-    // update state of block collection
-    state.block_type = block_types.none;
     // drive past junction
     set_motor_dirs(FORWARD);
     set_motor_speeds(255);
