@@ -87,8 +87,6 @@ void turn_around_and_go_home() {
 
 void start_going_home_from_red_box() {
   state.block_type = block_types.none;
-  // return to initial position and stop
-  reverse_run();
 
   turn_on_spot(false);
   my_delay(2000);
@@ -125,6 +123,8 @@ void deposit_block() {
   // stop and raise grabber
   set_motor_speeds(0);
   raise_grabber();
+  // return to initial position and stop
+  reverse_run();
 
   // === escape box ===
   // If we're in the red box and time is running low we need to dash home
@@ -133,8 +133,6 @@ void deposit_block() {
   } else {
     // update state of block collection
     state.block_type = block_types.none;
-    // return to initial position and stop
-    reverse_run(true);
     // drive past junction
     set_motor_dirs(FORWARD);
     set_motor_speeds(255);
