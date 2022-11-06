@@ -12,7 +12,7 @@ void print_motor_cmds() {
   }
 }
 
-void reverse_run(bool ignore_sensors=false) {
+void reverse_run(bool ignore_sensors=true) {
   Serial.println("Task: Reverse Running");
   state.recording = false;
   state.time_stamp_of_cmd_being_rev_run = millis();
@@ -85,10 +85,10 @@ void turn_around_and_go_home() {
   state.approaching = approachables.just_before_home_junct;
 }
 
-void go_home_from_red_box() {
+void start_going_home_from_red_box() {
   state.block_type = block_types.none;
   // return to initial position and stop
-  reverse_run(true);
+  reverse_run();
 
   turn_on_spot(false);
   my_delay(2000);
@@ -129,7 +129,7 @@ void deposit_block() {
   // === escape box ===
   // If we're in the red box and time is running low we need to dash home
   if (state.approaching == approachables.red_junct) {
-    go_home_from_red_box();
+    start_going_home_from_red_box();
   } else {
     // update state of block collection
     state.block_type = block_types.none;
