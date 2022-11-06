@@ -148,16 +148,13 @@ void deposit_block() {
 
 void handle_junct() {
   Serial.println("Task: Handling Junction");
-  if (
-       (state.block_type == block_types.non_mag && state.approaching == approachables.green_junct)
+  if (state.block_type == block_types.none && state.approaching == approachables.home_junct) {
+    go_home();
+  } else if (
+    (state.block_type == block_types.non_mag && state.approaching == approachables.green_junct)
     || (state.block_type == block_types.mag && state.approaching == approachables.red_junct)
-    || (state.block_type == block_types.none && state.approaching == approachables.home_junct)
   ) {
-    if (state.approaching == approachables.home_junct) {
-      go_home();
-    } else {
-      deposit_block();
-    }
+    deposit_block();
   } else {
     next_approaching_after_junct();
   }
