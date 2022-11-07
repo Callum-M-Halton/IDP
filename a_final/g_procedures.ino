@@ -82,33 +82,37 @@ void go_home_from_red_box() {
 }
 */
 
+/////////////
 // going home from green box
 void turn_around_and_go_home() {
-  
-  // Turn to face line
+  // Start 180 degree turn
   turn_on_spot(true);
   my_delay(2000);
   
-  // Go until line found
-  while (!any_front_line_sensors_firing()){
+  // Continue turning until back on line facing towards the home junction
+  while (!any_front_line_sensors_firing()) {
     my_milli_delay();
   }
-  //__________________
+  // Stop
   set_motor_dirs(0);
+  // Start a timer for the time taken to get from the current position to just before the home junction
+  // Where we will start listening to the junction sensor for the turn to the home box
   start_super_timer(ST_lengths.just_after_green_junct_to_just_before_home_junct);
   state.approaching = approachables.just_before_home_junct;
 }
 
+// Once at the red junction, turn around and prepare to turn back around after the home junction
 void start_going_home_from_red_box() {
-  
-  // turn to face line
+  // Turn until off the line facing towards the central divider
   turn_on_spot(false);
   my_delay(2000);
-  // go until line found
+  // Continue turning until back on the line facing towards the home junction
   while (!any_front_line_sensors_firing()){
     my_milli_delay();
   }
-  state.approaching = approachables.just_before_green_junct; // is this correct? ____________________
+  // Now approaching point just before the green junction when we should turn again
+  // Start correspongind super timer
+  state.approaching = approachables.just_before_green_junct;
   start_super_timer(ST_lengths.red_junct_to_just_before_green_junct);
 }
 
@@ -126,7 +130,7 @@ void next_approaching_after_junct() {
   }
 }
 
-// drops of the box and returns to the line
+// drops off the box and returns to the line
 void deposit_block() {
   Serial.println("Task: Depositing Block");
   // start recording moves and turn at junct

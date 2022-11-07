@@ -15,7 +15,7 @@ void print_sensor_vals() {
   Serial.println(digitalRead(front_sensor_pins.right));
 }
 
-// storing the state of the motors: speed, directions and durations
+// storing the state of the motors: speed, directions and time stamps
 void add_motor_cmd() {
   motor_cmd_struct motor_cmd = {
     {state.motor_dirs[0], state.motor_dirs[1]},
@@ -28,6 +28,7 @@ void add_motor_cmd() {
   }
 }
 
+////////////// we can guess ur comment from the function name, why not just do R_motor->run(dir); directly ////////////
 //  allows changing the direction of each motor easily e.g. for turning
 void set_motor_dir(bool is_right, int dir) {
   if (state.motor_dirs[int(is_right)] != dir) {
@@ -41,12 +42,13 @@ void set_motor_dir(bool is_right, int dir) {
   }
 }
 
-// sets direction for BOTH motors at once e.g. reversing
+// sets direction for BOTH motors at once for e.g. reversing
 void set_motor_dirs(int dir) {
   set_motor_dir(false, dir);
   set_motor_dir(true, dir);
 }
 
+///////// why not just use R_motor -> setSpeed(speed); what else does this function do /////
 // controls the speed of ONE motor
 void set_motor_speed(bool is_right, int speed, bool raw=false) {
 
@@ -75,9 +77,10 @@ void set_motor_speeds(int speed) {
   set_motor_speed(true, speed);
 }
 
-// rotates without traversing
+////// SEE MY CORRECTION BELOW
+// rotates without traversing -> sets the motors to rotate in oposite directions (to_right depedent) at full speed
 void turn_on_spot(bool to_right) {
-    if (to_right){
+    if (to_right) {
         // set direction to turn right
         set_motor_dir(false, FORWARD);
         set_motor_dir(true, BACKWARD);
@@ -142,13 +145,13 @@ void flash_amber() {
   }
 }
 
-// facilitates flashing when moving
+// facilitates flashing during a millisecond delay
 void my_milli_delay() {
   flash_amber();
   delay(1);
 }
 
-// delays the code manually whilst keeping the same conditions ____________? 
+// A delay that enables flash_amber() to be called while it happens 
 void my_delay(int delay) {
   unsigned long timer_end = millis() + delay;
   while (millis() < timer_end) {

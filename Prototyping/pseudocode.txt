@@ -2,10 +2,10 @@
 
 // CONSTANTS
 const speeds = {
-	tiny: _____
-	low: ____
-	med: _____
-	high: _____
+	tiny: ------
+	low: ------
+	med: ------
+	high: ------
 }
 const modes = enum {
 	start,
@@ -28,8 +28,8 @@ const line_end_likelihoods = enum {
 	none, low, med, high, as_before
 }
 
-const SAMPLE_LENGTH = _________
-const CURVING_LEFT_THRESHOLD = ________
+const SAMPLE_LENGTH = -------
+const CURVING_LEFT_THRESHOLD = ------
 
 // directions
 offset_dirs = enum {none, left, right, unknown}

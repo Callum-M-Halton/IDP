@@ -15,7 +15,7 @@ const byte RED_LED_PIN = 12;
 const byte AMBER_LED_PIN = 13;
 const int HALL_SENSOR_PIN = A5;
 
-// constant analogue values that have been tuned
+// Constants that have been tuned through testing
 const int DROP_GRABBER_VALUE = 10;
 const int RAISE_GRABBER_VALUE = 70;
 const int MOTOR_CMDS_SIZE = 100;
@@ -24,13 +24,15 @@ const int HALL_SENSOR_THRESHOLD = 500;
 const int HALL_EFFECT_SAMPLE_LENGTH = 10;
 const int LOST_LINE_TIMER_LENGTH = 500;
 
-// set quantised speeds to allow line following and other manouvers
+// set quantised speeds for use in line following and other manouvers
 struct speeds_struct {
     const int tiny; const int low; const int med; const int high;
 };
 constexpr speeds_struct speeds = {0, 50, 150, 255};
 
-// Timers to know when to sense and detect certain inputs to initiate various sequences
+// These timer lengths are for causing the robot to wait a set time after detecting one waypoint
+// Before listening to sensors for the next, i.e. only start expecting the tunnel once you know
+// based on a timer expiring that you've gone around the corner before the tunnel
 struct super_timer_lengths_struct {
     const int start_to_straight_before_ramp;
     const int start_to_straight_before_tunnel;
