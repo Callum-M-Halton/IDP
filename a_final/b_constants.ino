@@ -13,7 +13,7 @@ const byte SERVO_PIN = 9; //has to go in 9 or 10 (servo specific pins)
 const byte GREEN_LED_PIN = 11;
 const byte RED_LED_PIN = 12;
 const byte AMBER_LED_PIN = 13;
-const int HALL_SENSOR_PIN = A0;
+const int HALL_SENSOR_PIN = A5;
 
 // constant analogue values that have been tuned
 const int DROP_GRABBER_VALUE = 10;
