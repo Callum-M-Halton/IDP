@@ -28,8 +28,8 @@ struct state_struct {
   unsigned long timer_end; int motor_dirs[2];
   int junct_sensor_val;
   unsigned long super_timer_end; int block_type;
-  //int blocks_collected; unsigned long start_time;
-  //int last_side_dist; unsigned long time_at_start_of_block_straight;  
+  // int blocks_collected; unsigned long start_time;
+  // int last_side_dist; unsigned long time_at_start_of_block_straight;  
   // NOTE COMMENTED OUT AS ONLY AIMED TO COLLECT ONE BLOCK ON STRAIGHT
 
   LinkedList<motor_cmd_struct> motor_cmds; unsigned long time_stamp_of_cmd_being_rev_run;
@@ -68,7 +68,6 @@ void start_super_timer(int ST_length) {
 
 
 // RAMP NOT USED so has been commented out
-
 /*
 bool is_approaching_EOL() {
   return state.approaching == approachables.tunnel
