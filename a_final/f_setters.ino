@@ -1,4 +1,6 @@
 #include <Arduino.h>
+// Had the GO_VIA_RAMP been enabled, the sectors can be incremented and the speeds adjusted accordingly once a sector was completed
+
 /*
 void set_sector(int sector_code) {
   state.sector_code = sector_code;

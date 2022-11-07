@@ -1,11 +1,13 @@
 #include <Arduino.h>
 
+// checks if any of the front 3 sensors are returning 1
 bool any_front_line_sensors_firing() {
   return digitalRead(front_sensor_pins.left) 
     || digitalRead(front_sensor_pins.mid)
     || digitalRead(front_sensor_pins.right);
 }
 
+// outputs front sensor values for testing purposes
 void print_sensor_vals() {
   Serial.print("\nFront Line Sensor Values: ");
   Serial.print(digitalRead(front_sensor_pins.left));
@@ -13,6 +15,7 @@ void print_sensor_vals() {
   Serial.println(digitalRead(front_sensor_pins.right));
 }
 
+// storing the state of the motors: speed, directions and durations
 void add_motor_cmd() {
   motor_cmd_struct motor_cmd = {
     {state.motor_dirs[0], state.motor_dirs[1]},
@@ -25,6 +28,7 @@ void add_motor_cmd() {
   }
 }
 
+//  allows changing the direction of each motor easily e.g. for turning
 void set_motor_dir(bool is_right, int dir) {
   if (state.motor_dirs[int(is_right)] != dir) {
     state.motor_dirs[int(is_right)] = dir;
@@ -37,11 +41,13 @@ void set_motor_dir(bool is_right, int dir) {
   }
 }
 
+// sets direction for BOTH motors at once e.g. reversing
 void set_motor_dirs(int dir) {
   set_motor_dir(false, dir);
   set_motor_dir(true, dir);
 }
 
+// controls the speed of ONE motor
 void set_motor_speed(bool is_right, int speed, bool raw=false) {
 
   // if not raw speeds wanted underdrives right motor to match left motor
@@ -63,11 +69,13 @@ void set_motor_speed(bool is_right, int speed, bool raw=false) {
 	}
 }
 
+// controlling the motor speeds for BOTH motors
 void set_motor_speeds(int speed) {
   set_motor_speed(false, speed);
   set_motor_speed(true, speed);
 }
 
+// rotates without traversing
 void turn_on_spot(bool to_right) {
     if (to_right){
         // set direction to turn right
@@ -86,6 +94,8 @@ void turn_on_spot(bool to_right) {
 bool test_if_magnetic() {
   Serial.println("Testing block with hall sensor");
   int tot = 0;
+  
+  // get's an average of reading to account for anomolous results
   for(int i = 0; i < HALL_EFFECT_SAMPLE_LENGTH; i++) {
       tot += analogRead(HALL_SENSOR_PIN);
   } 
@@ -107,16 +117,19 @@ bool test_if_magnetic() {
   }
 }
 
+// rotates the grabbing mechanism down to capture block
 void lower_grabber() {
     myservo.write(DROP_GRABBER_VALUE);
     my_delay(1000);
 }
 
+// raises the grabbing mechanics back above the ultrasonic sensor
 void raise_grabber() {
     myservo.write(RAISE_GRABBER_VALUE);
     my_delay(1000);
 }
 
+// flashes amber light when moving
 void flash_amber() {
   if (state.motor_speeds[0] == 0 && state.motor_speeds[1] == 0) {
     digitalWrite(AMBER_LED_PIN, LOW);
@@ -129,11 +142,13 @@ void flash_amber() {
   }
 }
 
+// facilitates flashing when moving
 void my_milli_delay() {
   flash_amber();
   delay(1);
 }
 
+// delays the code manually whilst keeping the same conditions ____________? 
 void my_delay(int delay) {
   unsigned long timer_end = millis() + delay;
   while (millis() < timer_end) {
@@ -141,6 +156,7 @@ void my_delay(int delay) {
   }
 }
 
+// Gets the distance in front of the specified US sensor in cm
 int get_ultrasonic_distance(bool is_front) {
   int trig_pin;
   int echo_pin;

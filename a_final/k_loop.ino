@@ -1,6 +1,8 @@
 #include <Arduino.h>
 
+// the continuously run loop
 void loop() {
+  // depdning on the previous approaching state and timer, set the new one
   if (millis() >= state.super_timer_end) {
     switch (state.approaching) {
       case approachables.just_before_home_junct:
@@ -19,6 +21,7 @@ void loop() {
         state.approaching = approachables.green_junct; break;
     }
   }
+  // if expecting junction, look for junction
   if (is_approaching_junct()) {
     int junct_sensor_val = digitalRead(JUNCT_SENSOR_PIN);
     // if falling edge of junct sensor
@@ -29,6 +32,7 @@ void loop() {
   } else if (state.approaching == approachables.block) {
     // Slow down when distance is 10cm
     int dist_to_block = get_ultrasonic_distance(true);
+    // once under 10cm, slow down and capture block
     if (dist_to_block <= 10) {
       aquire_block();
     }
@@ -40,7 +44,8 @@ void loop() {
   // update amber LED
   flash_amber();
 
-  // Useful Tests
+// =====================Useful tests used throughout=====================
+
   //Serial.println(digitalRead(BUTTON_PIN));
   //print_sensor_vals();
   //Serial.println(digitalRead(JUNCT_SENSOR_PIN));

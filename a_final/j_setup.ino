@@ -50,39 +50,3 @@ void setup() {
 
   // give the robot it's first task
   leave_start();
-
-  /*
-  lower_grabber();
-  state.approaching = approachables.home_junct;
-  state.block_type = block_types.none;
-  
-  lower_grabber();
-  state.approaching = approachables.green_junct;
-  state.block_type = block_types.non_mag;
-  
-  refind_line();
-  while(1);
-  */
-}
-
-  //state.start_time = millis();
-
-  /*if (false) {
-    turn_on_spot(false);
-    my_delay(500);
-    set_motor_dirs(FORWARD);
-    set_motor_speeds(255);
-    my_delay(1000);
-    turn_on_spot(true);
-    my_delay(500);
-    set_motor_dirs(FORWARD);
-    set_motor_speeds(255);
-    my_delay(1000);
-  }*/
-
-/*
-pinMode(RED_LED_PIN, OUTPUT);
-pinMode(GREEN_LED_PIN, OUTPUT);
-pinMode(HALL_SENSOR_PIN, INPUT);
-pinMode(ERROR_LED_PIN, OUTPUT);
-*/

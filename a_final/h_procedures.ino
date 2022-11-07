@@ -12,9 +12,10 @@ void print_motor_cmds() {
   }
 }
 
+// Runs the stored movements in reverse to go back to original position
 void reverse_run(bool ignore_sensors=true) {
   Serial.println("Task: Reverse Running");
-  state.recording = false;
+  state.recording = false; // don't want to record the reversed process
   state.time_stamp_of_cmd_being_rev_run = millis();
   state.timer_end = millis();
   while (ignore_sensors || !any_front_line_sensors_firing()) {
@@ -22,12 +23,15 @@ void reverse_run(bool ignore_sensors=true) {
       if (state.motor_cmds.size() == 0) {
         break;
       }
+
+      // gets the last movement from stack and reverses it
       motor_cmd_struct last_cmd = state.motor_cmds.pop();
       set_motor_dir(false, 3 - last_cmd.dirs[0]);
       set_motor_dir(true, 3 - last_cmd.dirs[1]);
       set_motor_speed(false, last_cmd.speeds[0], true);
       set_motor_speed(true, last_cmd.speeds[1], true);
-
+      
+      // reversed for same length it was executed originally
       unsigned long timer_length = state.time_stamp_of_cmd_being_rev_run - last_cmd.time_stamp;
 
       state.timer_end = millis() + timer_length;
@@ -36,9 +40,11 @@ void reverse_run(bool ignore_sensors=true) {
       my_delay(1);
     }
   }
+  // release motors once back in position
   set_motor_speeds(0);
 }
 
+// turning back into start box once finished
 void go_home() {
   Serial.println("Task: Going Home");
   // turn right at junction
@@ -52,6 +58,8 @@ void go_home() {
   while (1);
 }
 
+
+// manually turning and going into start box from the red box
 /*
 void go_home_from_red_box() {
   turn_on_spot(true);
@@ -74,27 +82,37 @@ void go_home_from_red_box() {
 }
 */
 
+// going home from green box
 void turn_around_and_go_home() {
+  
+  // Turn to face line
   turn_on_spot(true);
   my_delay(2000);
+  
+  // Go until line found
   while (!any_front_line_sensors_firing()){
     my_milli_delay();
   }
+  //__________________
   set_motor_dirs(0);
   start_super_timer(ST_lengths.just_after_green_junct_to_just_before_home_junct);
   state.approaching = approachables.just_before_home_junct;
 }
 
 void start_going_home_from_red_box() {
+  
+  // turn to face line
   turn_on_spot(false);
   my_delay(2000);
+  // go until line found
   while (!any_front_line_sensors_firing()){
     my_milli_delay();
   }
-  state.approaching = approachables.just_before_green_junct;
+  state.approaching = approachables.just_before_green_junct; // is this correct? ____________________
   start_super_timer(ST_lengths.red_junct_to_just_before_green_junct);
 }
 
+// incrementing the junction the buggy is near as needed to change sectors
 void next_approaching_after_junct() {
   Serial.println("Task: Setting the junction now being approached");
   switch (state.approaching) {
@@ -108,6 +126,7 @@ void next_approaching_after_junct() {
   }
 }
 
+// drops of the box and returns to the line
 void deposit_block() {
   Serial.println("Task: Depositing Block");
   // start recording moves and turn at junct
@@ -142,6 +161,7 @@ void deposit_block() {
 
 }
 
+// looks at the state of the block type, sector and approachables to decide what to do at each junction
 void handle_junct() {
   Serial.println("Task: Handling Junction");
   if (state.block_type == block_types.none && state.approaching == approachables.home_junct) {
@@ -156,25 +176,31 @@ void handle_junct() {
   }
 }
 
+// slows down once the block is within range to then capture block
 void aquire_block() {
   Serial.println("Task: Acquiring Block");
   set_motor_speed(false, 220);
   set_motor_speed(true, 255);
-  while(get_ultrasonic_distance(true) > 3) {
+  while(get_ultrasonic_distance(true) > 3) { // will approach block until it is within 3cm
     my_milli_delay();
   }
   set_motor_speeds(0);
-  
+
+  // Test if block is magnetic and assigns it
   if (test_if_magnetic()) {
     state.block_type = block_types.mag;
   } else {
     state.block_type = block_types.non_mag;
   }
+  //capture block in grabber
   lower_grabber();
 
+  // not used as tunnel was used both times
+  // would go up ramp ignoring anomolous sensor readings
   if (GO_VIA_RAMP) {
     start_super_timer(ST_lengths.block_aquired_to_straight_before_tunnel);
   } else {
+    // would need to return via tunnel if not using ramp so must turn around
     turn_on_spot(true);
     my_delay(2000);
     while (!any_front_line_sensors_firing()){
@@ -186,6 +212,7 @@ void aquire_block() {
   
 }
 
+// Uses side US to control distance to tunnel wall whilst not detecting the line
 void traverse_tunnel() {
   Serial.println("Task: Traversing Tunnel");
   set_motor_dirs(FORWARD);
@@ -193,21 +220,31 @@ void traverse_tunnel() {
   my_delay(500);
 
   unsigned long timer_end = millis() + 3500;
+
+  // whilst still in tunnel (tuned)
   while (!any_front_line_sensors_firing() && millis() < timer_end) {
     int dist_to_wall = get_ultrasonic_distance(false);
+    
+    // if too close to wall move away
     if (dist_to_wall < 6) {
       set_motor_speed(false, 255);
       set_motor_speed(true, 220);
+    // if too far from wall move closer
     } else if (dist_to_wall > 6) {
       set_motor_speed(true, 255);
       set_motor_speed(false, 220);
     } else {
+    // else continue straight
       set_motor_speeds(255);
     }
   }
+  // stop regulating speed in this function once reached end of tunnel
   set_motor_speeds(0);
 
+  // find the line at the end of the tunnel
   refind_line();
+
+  // decide where to go depending on block type
   if (state.block_type == block_types.none) {
     state.approaching = approachables.straight_before_block;
     start_super_timer(ST_lengths.tunnel_end_to_straight_before_block);
@@ -217,10 +254,13 @@ void traverse_tunnel() {
   }
 }
 
+// rotate to scan if line is within the arc of the rover
 void refind_line() {
   Serial.println("Task: Refinding Line");
   set_motor_speeds(0);
   unsigned long timer_end = millis() + 600;
+  
+  //arcs to the right first
   turn_on_spot(true);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
     my_milli_delay();
@@ -229,6 +269,8 @@ void refind_line() {
   if (any_front_line_sensors_firing()) { return; }
 
   timer_end = millis() + 1000;
+
+  // if no line found on right, look left
   turn_on_spot(false);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
     my_milli_delay();
@@ -236,27 +278,34 @@ void refind_line() {
   set_motor_speeds(0);
 }
 
+
+// Join the main line circuit from the start box
 void leave_start() {
   Serial.println("Task: Leaving Start Box");
+  // if ramp is chosen then turn right
   if (GO_VIA_RAMP) {
     start_super_timer(ST_lengths.start_to_straight_before_ramp); // TUNE
     state.approaching = approachables.straight_before_ramp;
+  // if tunnel is chosen turn left
   } else {
     start_super_timer(ST_lengths.start_to_straight_before_tunnel);
     state.approaching = approachables.straight_before_tunnel;
   }
   //rotate slightly to hit line at angle
-  turn_on_spot(GO_VIA_RAMP);
+  turn_on_spot(GO_VIA_RAMP); // true is turning right
   my_delay(500);
 
   // go to the line and skip the box
   set_motor_dirs(FORWARD);
   my_delay(1200);
 
+  // carry on until line is found
   while (!any_front_line_sensors_firing()) {
     my_milli_delay();
   }
 }
+
+// Ramp code not used as tunnel was chosen:
 
 /*
 void traverse_ramp() {
@@ -323,110 +372,3 @@ void find_block() {
 }
 */
 
-/*
-void leave_start() {
-  Serial.println("Task: Leaving Start");
-  set_motor_dirs(FORWARD);
-  set_motor_speeds(255);
-  my_delay(TIME_TO_DRIVE_FORWARD_FOR_AT_START);
-
-  // reverse until the side sensor detects the line
-  set_motor_dirs(BACKWARD);
-  set_motor_speeds(255);
-  bool not_yet = true
-  while (!digitalRead(JUNCT_SENSOR_PIN)) {
-    my_delay(Microseconds(1);
-  }
-  
-  // turns right until line detected
-  // set direction to turn right
-  set_motor_dir(false, FORWARD);
-  set_motor_dir(true, BACKWARD);
-
-  set_motor_speeds(255);
-  // while no front sensors are firing
-  while (!any_front_line_sensors_firing()){
-    my_delay(Microseconds(1);
-  }
-  set_motor_speeds(0);
-  // We're now on the main loop at the first on-loop sector
-  set_sector(0);
-}*/
-
-/*void refind_line() {
-  //print_motor_cmds();
-  Serial.println("Task: Refinding Line");
-  set_motor_dirs(FORWARD);
-  set_motor_speed(false, 255);
-  set_motor_speed(true, 150);
-  while(!any_front_line_sensors_firing()) {
-    my_delay(Microseconds(1);
-  }
-
-  // perturb right if sector is ramp_straight otherwise perturb left
-  bool perturb_right = state.sector_code == 3; // ramp straight code
-  int dirs[2] = {FORWARD, BACKWARD};
-  set_motor_dir(false, dirs[int(!perturb_right)], false);
-  set_motor_dir(true, dirs[int(perturb_right)], false);
-  set_motor_speeds(255, false);
-  while (any_front_line_sensors_firing()) {
-    my_delay(Microseconds(1);
-  }
-  set_motor_dir(false, dirs[int(perturb_right)], false);
-  set_motor_dir(true, dirs[int(!perturb_right)], false);
-  while (!any_front_line_sensors_firing()) {
-    my_delay(Microseconds(1);
-  }
-  set_motor_speeds(0, false);
-  digitalWrite(ERROR_LED_PIN, LOW);
-}*/
-
-
-/* ======= bits ======
-  // adds a flag to the motor cmds history so we can reverse up until this point later
-  add_motor_cmd(true // true indicates to add a flag command);
-
-  reverse_run(true);
-  set_motor_dirs(BACKWARD);
-  set_motor_speeds(255);
-  my_delay(200);
-  set_motor_speeds(0);
-  state.approaching = approachables.junct_on_right;
-  state.sector_code_to_turn_off_after = -1;
-
-  if (test_if_magnetic()) {
-    // 11 => "straight_before_green_junct"
-    state.sector_code_to_turn_off_after = 11;
-  } else {
-    // 0 => "straight_after_start_junct" i.e. straight before red junct
-    state.sector_code_to_turn_off_after = 0;
-  }
-*/
-
-  /*
-  bool seq[4] = {true, false, false, true};
-  for (int t = 50; t < 1000; t += 50) {
-    for (int s = 0; s < 5; s++) {
-      timer_end = millis() + t;
-      turn_on_spot(seq[s]);
-      while(millis() < timer_end && !any_front_line_sensors_firing()) {
-        delayMicroseconds(1);
-      }
-      if (any_front_line_sensors_firing()) { return; }
-    }
-  }
-  */
-/*
-      turn_on_spot(false);
-    my_delay(1500);
-    set_motor_dirs(FORWARD);
-    set_motor_speeds(255);
-    my_delay(1200);
-    //
-    set_motor_speeds(0);
-    while(1)
-    // rejoin line
-    while (!any_front_line_sensors_firing()) {
-      my_milli_delay();
-    }
-    */
