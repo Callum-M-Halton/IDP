@@ -50,3 +50,4 @@ void setup() {
 
   // give the robot it's first task
   leave_start();
+}

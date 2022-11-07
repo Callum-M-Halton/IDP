@@ -13,5 +13,3 @@ struct approachables_struct {
   const int just_before_home_junct;
 };
 constexpr approachables_struct approachables = {0,1,2,3,4,5,6,7,8,9,10,11,12,13};
-
-

@@ -1,4 +1,7 @@
 #include <Arduino.h>
+
+
+// RAMP NOT USED so has been commented out
 /*
 void handle_EOL() {
   switch (state.approaching) {
