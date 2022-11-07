@@ -15,11 +15,13 @@ void print_motor_cmds() {
 // Runs the stored movements in reverse to go back to original position
 void reverse_run(bool ignore_sensors=true) {
   Serial.println("Task: Reverse Running");
-  state.recording = false; // don't want to record the reversed process
+  state.recording = false; // don't want to record the reversing process
+  //////// explain
   state.time_stamp_of_cmd_being_rev_run = millis();
   state.timer_end = millis();
   while (ignore_sensors || !any_front_line_sensors_firing()) {
     if (millis() >= state.timer_end) {
+      /////// explain
       if (state.motor_cmds.size() == 0) {
         break;
       }
@@ -35,6 +37,7 @@ void reverse_run(bool ignore_sensors=true) {
       unsigned long timer_length = state.time_stamp_of_cmd_being_rev_run - last_cmd.time_stamp;
 
       state.timer_end = millis() + timer_length;
+      ////// explain
       state.time_stamp_of_cmd_being_rev_run = last_cmd.time_stamp;
     } else {
       my_delay(1);
@@ -49,40 +52,16 @@ void go_home() {
   Serial.println("Task: Going Home");
   // turn right at junction
   turn_on_spot(true);
-  my_delay(1200); ///////
+  my_delay(1200);
   // go forwards into home box
   set_motor_dirs(FORWARD);
   my_delay(1300);
-  // stop
+  // stop forever
   set_motor_speeds(0);
   while (1);
 }
 
-
-// manually turning and going into start box from the red box
-/*
-void go_home_from_red_box() {
-  turn_on_spot(true);
-  my_delay(1025); //TUNE
-  set_motor_dirs(FORWARD);
-  my_delay(2000); //TUNE
-  while (!any_front_line_sensors_firing()) {
-    my_milli_delay();
-  }
-  set_motor_speed(true, 255);
-  set_motor_speed(false, 230);
-  set_motor_speeds(0);
-  //myservo.write(45);
-  turn_on_spot(false);
-  my_delay(250);
-  set_motor_dirs(FORWARD);
-  my_delay(1175);
-  set_motor_speeds(0);
-  while(1);
-}
-*/
-
-/////////////
+///////////// incorrect
 // going home from green box
 void turn_around_and_go_home() {
   // Start 180 degree turn
@@ -111,11 +90,12 @@ void start_going_home_from_red_box() {
     my_milli_delay();
   }
   // Now approaching point just before the green junction when we should turn again
-  // Start correspongind super timer
+  // Start corresponding super timer
   state.approaching = approachables.just_before_green_junct;
   start_super_timer(ST_lengths.red_junct_to_just_before_green_junct);
 }
 
+///////// unclear wording
 // incrementing the junction the buggy is near as needed to change approach
 void next_approaching_after_junct() {
   Serial.println("Task: Setting the junction now being approached");
@@ -129,7 +109,7 @@ void next_approaching_after_junct() {
     break;
   }
 }
-
+/////// don't confuse box and block
 // drops off the box and returns to the line
 void deposit_block() {
   Serial.println("Task: Depositing Block");
@@ -176,13 +156,15 @@ void handle_junct() {
   ) {
     deposit_block();
   } else {
+    ///// add brief explanation
     next_approaching_after_junct();
   }
 }
 
-// slows down once the block is within range to then capture block
+// Adjusts coures once the block is within range to then capture block
 void aquire_block() {
   Serial.println("Task: Acquiring Block");
+  // Adjust course
   set_motor_speed(false, 220);
   set_motor_speed(true, 255);
   while(get_ultrasonic_distance(true) > 3) { // will approach block until it is within 3cm
@@ -190,13 +172,14 @@ void aquire_block() {
   }
   set_motor_speeds(0);
 
+  ////////// "Assigns it" is vague
   // Test if block is magnetic and assigns it
   if (test_if_magnetic()) {
     state.block_type = block_types.mag;
   } else {
     state.block_type = block_types.non_mag;
   }
-  //capture block in grabber
+  // capture block in grabber
   lower_grabber();
 
   // not used as tunnel was used both times
@@ -210,8 +193,10 @@ void aquire_block() {
     while (!any_front_line_sensors_firing()){
       my_milli_delay();
     }
+    ///// explain
     start_super_timer(ST_lengths.turned_180_to_straight_before_tunnel);
   }
+  ///// these two, it can be just one line
   state.approaching = approachables.straight_before_tunnel;
   
 }
@@ -219,10 +204,12 @@ void aquire_block() {
 // Uses side US to control distance to tunnel wall whilst not detecting the line
 void traverse_tunnel() {
   Serial.println("Task: Traversing Tunnel");
+  ///// what does this code do AND WHY
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
   my_delay(500);
 
+  ///// why are we setting a timer here
   unsigned long timer_end = millis() + 3500;
 
   // whilst still in tunnel (tuned)
@@ -242,13 +229,14 @@ void traverse_tunnel() {
       set_motor_speeds(255);
     }
   }
+  ////// completely wrong comment
   // stop regulating speed in this function once reached end of tunnel
   set_motor_speeds(0);
 
   // find the line at the end of the tunnel
   refind_line();
 
-  // decide where to go depending on block type
+  // decide where to go depending on block type ///// why depending on block type EXPLAIN!
   if (state.block_type == block_types.none) {
     state.approaching = approachables.straight_before_block;
     start_super_timer(ST_lengths.tunnel_end_to_straight_before_block);
@@ -264,7 +252,7 @@ void refind_line() {
   set_motor_speeds(0);
   unsigned long timer_end = millis() + 600;
   
-  //arcs to the right first
+  // arcs to the right first
   turn_on_spot(true);
   while(millis() < timer_end && !any_front_line_sensors_firing()) {
     my_milli_delay();
@@ -286,31 +274,53 @@ void refind_line() {
 // Join the main line circuit from the start box
 void leave_start() {
   Serial.println("Task: Leaving Start Box");
-  // if ramp is chosen then turn right
+  // if ramp is chosen then turn right //// wrong
   if (GO_VIA_RAMP) {
     start_super_timer(ST_lengths.start_to_straight_before_ramp); // TUNE
     state.approaching = approachables.straight_before_ramp;
-  // if tunnel is chosen turn left
+  // if tunnel is chosen turn left //// wrong
   } else {
     start_super_timer(ST_lengths.start_to_straight_before_tunnel);
     state.approaching = approachables.straight_before_tunnel;
   }
-  //rotate slightly to hit line at angle
+  // rotate slightly to hit line at angle and turn right or left depending on whether going via ramp
   turn_on_spot(GO_VIA_RAMP); // true is turning right
   my_delay(500);
 
-  // go to the line and skip the box
+  // drive straight forward for a set time to skip the box edge 
   set_motor_dirs(FORWARD);
   my_delay(1200);
 
-  // carry on until line is found
+  // carry on until main loop line is found
   while (!any_front_line_sensors_firing()) {
     my_milli_delay();
   }
 }
 
-// Ramp code not used as tunnel was chosen:
+// manually turning and going into start box from the red box
+/*
+void go_home_from_red_box() {
+  turn_on_spot(true);
+  my_delay(1025); //TUNE
+  set_motor_dirs(FORWARD);
+  my_delay(2000); //TUNE
+  while (!any_front_line_sensors_firing()) {
+    my_milli_delay();
+  }
+  set_motor_speed(true, 255);
+  set_motor_speed(false, 230);
+  set_motor_speeds(0);
+  //myservo.write(45);
+  turn_on_spot(false);
+  my_delay(250);
+  set_motor_dirs(FORWARD);
+  my_delay(1175);
+  set_motor_speeds(0);
+  while(1);
+}
+*/
 
+// Ramp code not used as tunnel was chosen:
 /*
 void traverse_ramp() {
   Serial.println("Task: Traversing Ramp");

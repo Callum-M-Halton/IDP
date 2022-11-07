@@ -12,12 +12,13 @@ void handle_EOL() {
 
 // Follows line unless the approachable indicates it shouldn't
 void follow_line_step() {
+  ///// of what?! also "estimates" implies we're going to get a probability float, make clear it's an enum
   // estimates the liklihood from the sensor readings in correct trajectory
   int line_end_likelihood = correct_trajectory();
 
-  // if it is likely the line will end consider each case in turn
+  // if it is likely the line has ended consider each case in turn
   if (line_end_likelihood != line_end_likelihoods.none) {
-    // if we expect the tunnel then handle tunnel traversal
+    // if we're expecting the tunnel then line ending is even more likely so immediately switch to tunnel traversal
     if (state.approaching == approachables.tunnel) {
       traverse_tunnel();
     } else if (line_end_likelihood == line_end_likelihoods.as_before) {

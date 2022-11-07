@@ -137,6 +137,7 @@ void flash_amber() {
   if (state.motor_speeds[0] == 0 && state.motor_speeds[1] == 0) {
     digitalWrite(AMBER_LED_PIN, LOW);
   } else {
+    /////// explain
     if (millis() % 500 < 250) {
       digitalWrite(AMBER_LED_PIN, HIGH);
     } else {

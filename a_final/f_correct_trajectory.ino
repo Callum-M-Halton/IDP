@@ -4,7 +4,7 @@
 struct line_end_likelihoods_struct {int none; int as_before; int high; int low;};
 line_end_likelihoods_struct line_end_likelihoods = {0,1,2,3};
 
-// Negative feedback loop to continuously adjust the rover back on to the line depending on which sensors are firing
+// Negative feedback step to continuously adjust the rover back on to the line depending on which sensors are firing
 int correct_trajectory() {
   set_motor_dirs(FORWARD);
   int sensors[3] = {digitalRead(front_sensor_pins.left),
@@ -70,7 +70,7 @@ int correct_trajectory() {
             set_motor_speed(false, speeds.tiny);
             set_motor_speed(true, speeds.high);
           }
-          // decide what the line_end_likelihood is 
+          // decide what the line_end_likelihood is ///// elaborate on reasoning here
           if (state.offset_ext == offset_exts.none) {
             line_end_likelihood = line_end_likelihoods.high;
           } else {
