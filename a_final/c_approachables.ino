@@ -1,14 +1,13 @@
 #include <Arduino.h>
 
-// Assigning numeric indexes to each approachables
+// Assigning numeric indexes to each approachable
 struct approachables_struct {
   const int tunnel; int nothing;
   const int box; const int block;
   const int red_junct; const int green_junct;
   const int home_junct; const int straight_before_block;
   const int straight_before_juncts; const int straight_before_tunnel;
-  const int straight_before_ramp; const int ramp; /*const int block_to_left;
-  const int block_straight;*/ // VIA_RAMP based approachables not used
+  const int straight_before_ramp; const int ramp;  // VIA_RAMP based approachables not used
   const int just_before_green_junct;
   const int just_before_home_junct;
 };
