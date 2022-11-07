@@ -76,6 +76,8 @@ bool is_approaching_EOL() {
 }
 */
 
+
+// can delete? _______________________
 /*
   
   LinkedList<int> disparities_sample; int sector_code;

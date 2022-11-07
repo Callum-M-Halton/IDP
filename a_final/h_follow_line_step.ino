@@ -7,7 +7,7 @@ void handle_EOL() {
   }
 }*/
 
-// Follows line unless the sector indicates it shouldn't
+// Follows line unless the approachable indicates it shouldn't
 void follow_line_step() {
   // estimates the liklihood from the sensor readings in correct trajectory
   int line_end_likelihood = correct_trajectory();

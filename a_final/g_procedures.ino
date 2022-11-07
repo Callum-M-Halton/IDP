@@ -112,7 +112,7 @@ void start_going_home_from_red_box() {
   start_super_timer(ST_lengths.red_junct_to_just_before_green_junct);
 }
 
-// incrementing the junction the buggy is near as needed to change sectors
+// incrementing the junction the buggy is near as needed to change approach
 void next_approaching_after_junct() {
   Serial.println("Task: Setting the junction now being approached");
   switch (state.approaching) {
@@ -161,7 +161,7 @@ void deposit_block() {
 
 }
 
-// looks at the state of the block type, sector and approachables to decide what to do at each junction
+// looks at the state of the block type and approachable to decide what to do at each junction
 void handle_junct() {
   Serial.println("Task: Handling Junction");
   if (state.block_type == block_types.none && state.approaching == approachables.home_junct) {
