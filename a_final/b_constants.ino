@@ -31,7 +31,7 @@ struct speeds_struct {
 constexpr speeds_struct speeds = {0, 50, 150, 255};
 
 // These timer lengths are for causing the robot to wait a set time after detecting one waypoint
-// Before listening to sensors for the next, i.e. only start expecting the tunnel once you know
+// before listening to sensors for the next, i.e. only start expecting the tunnel once you know
 // based on a timer expiring that you've gone around the corner before the tunnel
 struct super_timer_lengths_struct {
     const int start_to_straight_before_ramp;

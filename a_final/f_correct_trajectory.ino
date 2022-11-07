@@ -70,9 +70,11 @@ int correct_trajectory() {
             set_motor_speed(false, speeds.tiny);
             set_motor_speed(true, speeds.high);
           }
-          // decide what the line_end_likelihood is ///// elaborate on reasoning here
+          // decide what the line_end_likelihood is
+          // if now there is no line being detected and the offset is supposed to be none then the line has ended abruptly at the tunnel
           if (state.offset_ext == offset_exts.none) {
             line_end_likelihood = line_end_likelihoods.high;
+          // otherwise it is just that the line is far away from the rover and the extent is only large from this moment
           } else {
             line_end_likelihood = line_end_likelihoods.low;
           }

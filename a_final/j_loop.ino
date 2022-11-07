@@ -2,14 +2,14 @@
 
 // the continuously run loop
 void loop() {
-  ///// exlplain
+  // if the prebious super timer has run out of time, the approachable needs to be updated to the new one
   if (millis() >= state.super_timer_end) {
      // depending on the previous approaching, set the new one
     switch (state.approaching) {
       case approachables.just_before_home_junct:
         state.approaching = approachables.home_junct; break;
       case approachables.just_before_green_junct:
-        //// explain
+        ////__________
         turn_around_and_go_home(); break;
       case approachables.straight_before_ramp:
         state.approaching = approachables.ramp; break;
@@ -32,11 +32,8 @@ void loop() {
     }
     state.junct_sensor_val = junct_sensor_val;
   } else if (state.approaching == approachables.block) {
-    // "Slow down" is misleading, it adjusts course slightly
-    // Slow down when distance is 10cm
     int dist_to_block = get_ultrasonic_distance(true);
-    /////////
-    // once under 10cm, slow down and capture block
+    // once under 10cm, acquire block is initiated so that the rover starts adjusting course and slowing slightly
     if (dist_to_block <= 10) {
       aquire_block();
     }

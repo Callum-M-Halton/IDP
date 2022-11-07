@@ -12,8 +12,7 @@ void handle_EOL() {
 
 // Follows line unless the approachable indicates it shouldn't
 void follow_line_step() {
-  ///// of what?! also "estimates" implies we're going to get a probability float, make clear it's an enum
-  // estimates the liklihood from the sensor readings in correct trajectory
+  // sets an enum for the liklihood of the line ending from the sensor readings in correct trajectory
   int line_end_likelihood = correct_trajectory();
 
   // if it is likely the line has ended consider each case in turn

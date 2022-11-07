@@ -16,12 +16,12 @@ void print_motor_cmds() {
 void reverse_run(bool ignore_sensors=true) {
   Serial.println("Task: Reverse Running");
   state.recording = false; // don't want to record the reversing process
-  //////// explain
+  // stores when the reversal is being run
   state.time_stamp_of_cmd_being_rev_run = millis();
   state.timer_end = millis();
   while (ignore_sensors || !any_front_line_sensors_firing()) {
     if (millis() >= state.timer_end) {
-      /////// explain
+      // if no commands need to be reversed then this loop is over
       if (state.motor_cmds.size() == 0) {
         break;
       }
@@ -37,7 +37,7 @@ void reverse_run(bool ignore_sensors=true) {
       unsigned long timer_length = state.time_stamp_of_cmd_being_rev_run - last_cmd.time_stamp;
 
       state.timer_end = millis() + timer_length;
-      ////// explain
+      // timer length is lengthened by the length of the instruction being popped from the stack so that it runs for the same amount of time in reverse
       state.time_stamp_of_cmd_being_rev_run = last_cmd.time_stamp;
     } else {
       my_delay(1);
@@ -61,8 +61,7 @@ void go_home() {
   while (1);
 }
 
-///////////// incorrect
-// going home from green box
+// going home from just before home junction - used when going home from the red box by going back to green side first
 void turn_around_and_go_home() {
   // Start 180 degree turn
   turn_on_spot(true);
@@ -95,8 +94,7 @@ void start_going_home_from_red_box() {
   start_super_timer(ST_lengths.red_junct_to_just_before_green_junct);
 }
 
-///////// unclear wording
-// incrementing the junction the buggy is near as needed to change approach
+// changes the approachables for the junctions based off of the previous one e.g. increments it to the next junction as needed
 void next_approaching_after_junct() {
   Serial.println("Task: Setting the junction now being approached");
   switch (state.approaching) {
@@ -109,8 +107,8 @@ void next_approaching_after_junct() {
     break;
   }
 }
-/////// don't confuse box and block
-// drops off the box and returns to the line
+
+// drops off the block and returns to the line
 void deposit_block() {
   Serial.println("Task: Depositing Block");
   // start recording moves and turn at junct
@@ -156,7 +154,7 @@ void handle_junct() {
   ) {
     deposit_block();
   } else {
-    ///// add brief explanation
+    // does not need to go inside a box as these cases were considered above so needs to carry on to the next waypoint
     next_approaching_after_junct();
   }
 }
@@ -172,8 +170,8 @@ void aquire_block() {
   }
   set_motor_speeds(0);
 
-  ////////// "Assigns it" is vague
-  // Test if block is magnetic and assigns it
+  
+  // Test if block is magnetic and sets the block type as such
   if (test_if_magnetic()) {
     state.block_type = block_types.mag;
   } else {
@@ -193,10 +191,10 @@ void aquire_block() {
     while (!any_front_line_sensors_firing()){
       my_milli_delay();
     }
-    ///// explain
+    // starts a super timer to first listen to find the line again once turned 180 degrees 
     start_super_timer(ST_lengths.turned_180_to_straight_before_tunnel);
   }
-  ///// these two, it can be just one line
+  // then sets the approachables as the line it has just found (the straight before the tunnel)
   state.approaching = approachables.straight_before_tunnel;
   
 }
@@ -204,15 +202,15 @@ void aquire_block() {
 // Uses side US to control distance to tunnel wall whilst not detecting the line
 void traverse_tunnel() {
   Serial.println("Task: Traversing Tunnel");
-  ///// what does this code do AND WHY
+  // initially sets the rover to go straight through the tunnel - which is unlikely to happen but is the base state in this part of the map
   set_motor_dirs(FORWARD);
   set_motor_speeds(255);
   my_delay(500);
 
-  ///// why are we setting a timer here
+  // after tuning,we expect that we don't need to check the line sensor data for 3500ms
   unsigned long timer_end = millis() + 3500;
 
-  // whilst still in tunnel (tuned)
+  // whilst still in tunnel (tuned) and timer still going
   while (!any_front_line_sensors_firing() && millis() < timer_end) {
     int dist_to_wall = get_ultrasonic_distance(false);
     
@@ -229,14 +227,14 @@ void traverse_tunnel() {
       set_motor_speeds(255);
     }
   }
-  ////// completely wrong comment
-  // stop regulating speed in this function once reached end of tunnel
+  // sets both motor speeds to 0 before looking for the line again in refind_line()
   set_motor_speeds(0);
 
   // find the line at the end of the tunnel
   refind_line();
 
-  // decide where to go depending on block type ///// why depending on block type EXPLAIN!
+  // decide where to go depending on block type as if we have a block it going through the tunnel from the far side,
+  // if we do not have a block it must be going through from the near side
   if (state.block_type == block_types.none) {
     state.approaching = approachables.straight_before_block;
     start_super_timer(ST_lengths.tunnel_end_to_straight_before_block);
@@ -274,11 +272,11 @@ void refind_line() {
 // Join the main line circuit from the start box
 void leave_start() {
   Serial.println("Task: Leaving Start Box");
-  // if ramp is chosen then turn right //// wrong
+  // if ramp is chosen then set approachables to the straight before the ramp
   if (GO_VIA_RAMP) {
     start_super_timer(ST_lengths.start_to_straight_before_ramp); // TUNE
     state.approaching = approachables.straight_before_ramp;
-  // if tunnel is chosen turn left //// wrong
+  // if tunnel is chosen then set approachables to the straight before the tunnel (the other direction for the straight)
   } else {
     start_super_timer(ST_lengths.start_to_straight_before_tunnel);
     state.approaching = approachables.straight_before_tunnel;

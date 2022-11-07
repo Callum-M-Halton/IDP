@@ -28,8 +28,7 @@ void add_motor_cmd() {
   }
 }
 
-////////////// we can guess ur comment from the function name, why not just do R_motor->run(dir); directly ////////////
-//  allows changing the direction of each motor easily e.g. for turning
+// This function changes the direction of motor and then also records the state of the motor so that it can be reversed if needed
 void set_motor_dir(bool is_right, int dir) {
   if (state.motor_dirs[int(is_right)] != dir) {
     state.motor_dirs[int(is_right)] = dir;
@@ -48,8 +47,7 @@ void set_motor_dirs(int dir) {
   set_motor_dir(true, dir);
 }
 
-///////// why not just use R_motor -> setSpeed(speed); what else does this function do /////
-// controls the speed of ONE motor
+// controls the speed of ONE motor, accounting for power discrepencies, then stores the state of the motors and flashes the amber led as needed
 void set_motor_speed(bool is_right, int speed, bool raw=false) {
 
   // if not raw speeds wanted underdrives right motor to match left motor
@@ -77,8 +75,7 @@ void set_motor_speeds(int speed) {
   set_motor_speed(true, speed);
 }
 
-////// SEE MY CORRECTION BELOW
-// rotates without traversing -> sets the motors to rotate in oposite directions (to_right depedent) at full speed
+// rotates without traversing -> sets the motors to rotate in opposite directions (to_right depedent) at full speed to turn
 void turn_on_spot(bool to_right) {
     if (to_right) {
         // set direction to turn right
@@ -94,6 +91,7 @@ void turn_on_spot(bool to_right) {
     set_motor_speed(false, 255); //left motor
 }
 
+// performs the magentic test and then outputs the result as required through LEDs in the spec
 bool test_if_magnetic() {
   Serial.println("Testing block with hall sensor");
   int tot = 0;
@@ -134,10 +132,11 @@ void raise_grabber() {
 
 // flashes amber light when moving
 void flash_amber() {
+  // if stationary the amber LED is off
   if (state.motor_speeds[0] == 0 && state.motor_speeds[1] == 0) {
     digitalWrite(AMBER_LED_PIN, LOW);
   } else {
-    /////// explain
+    // blinks at a rate of 2Hz (once every 0.5 seconds) by blinking in the first half of each half second increment
     if (millis() % 500 < 250) {
       digitalWrite(AMBER_LED_PIN, HIGH);
     } else {
