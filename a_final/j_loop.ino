@@ -2,14 +2,17 @@
 
 // the continuously run loop
 void loop() {
-  // if the prebious super timer has run out of time, the approachable needs to be updated to the new one
+  // if the previous super timer has run out of time, the approachable needs to be updated to the new one
   if (millis() >= state.super_timer_end) {
      // depending on the previous approaching, set the new one
     switch (state.approaching) {
       case approachables.just_before_home_junct:
         state.approaching = approachables.home_junct; break;
       case approachables.just_before_green_junct:
-        ////__________
+        // We're just before the green junction facing left and are on our way
+        // home so now need to turn to face right to turn off at the home junction when we reach it.
+        // we have to turn off with the home junction on our right as that is the side with the 
+        // junction line sensor
         turn_around_and_go_home(); break;
       case approachables.straight_before_ramp:
         state.approaching = approachables.ramp; break;

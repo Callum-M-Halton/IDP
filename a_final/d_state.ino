@@ -53,9 +53,12 @@ bool is_approaching_junct() {
 // ++++++++++++++++++++++++++
 
 // ====== STATE SETTERS ======
+// Starts a super-timer for the length specified
+// (A super timer is a timer used to determine when we should switch our mode or what we're approaching
+// ... unlike the normal timer which is just used for deetermining whether we've lost the line)
 void start_super_timer(int ST_length) {
-  // +++++++++
-  // super timer to time accounting for starting time of board powering on to be used to toggle which inputs inform decision making
+  // Sets the time in millis when the timer will expire so that in the future
+  // millis() can be checked against this value to see if it has expired 
   state.super_timer_end = millis() + ST_length;
 }
 // +++++++++++++++++++++++++++
